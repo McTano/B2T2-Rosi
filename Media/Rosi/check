@@ -1,0 +1,4 @@
+#! /bin/zsh
+
+cd ~/Rosi
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI -e Table,emptyTable
