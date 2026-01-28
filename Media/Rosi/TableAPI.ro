@@ -1,0 +1,128 @@
+import Ro.Base, Data.List
+
+
+-- ## Assumptions
+
+
+-- ### Required Column Operations
+
+-- concat: append two column names
+-- colNameOfNumber: convert a Number to a ColName
+-- split: divide a column name into pieces (used to implement startsWith)
+
+
+-- ### Required Functions
+
+-- `even`: consumes an integer and returns a boolean
+-- `length`: consumes a sequence and measures its length
+-- `schema`: extracts the schema of a table
+-- `subTable`: extracts a combination of rows (`selectRows`) and columns (`selectColumns`) from a table
+-- `range`: consumes a number and produces a sequence of valid indices
+-- `concat`: concatenates two sequences or two strings
+-- `startsWith`: checks whether a string starts with another string
+-- `average`: computes the average of a sequence of numbers
+-- `filter`: the conventional sequence (e.g. lists) filter
+-- `map`: the conventional sequence (e.g. lists) map
+-- `removeDuplicates`: consumes a sequence and produces a subsequence with all duplicated elements removed
+-- `removeAll`: consumes two sequences and produces a subsequence of the first input, removing all elements that also appear in the second input
+
+
+-- ### Available Constraints
+
+-- `x` has no duplicates
+-- `x` is equal to `y`
+-- `x` is (not) in `y`
+-- `x` is a subsequence of `y`
+-- `x` is of sort `y`
+-- `x` is `y`
+-- `x` is a categorical sort
+-- `x` is (non-)negative
+-- `x` is equal to the sort of `y`
+-- `x` is the sort of elements of `y`
+-- `x` is equal to `y` with all `a_i` replaced with `b_i`
+
+
+-- ## Constructors
+
+-- ### `emptyTable :: t:Table`
+emptyTable = nil
+
+-- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`'
+-- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
+-- ### `buildColumn :: t1:Table * c:ColName * f:(r:Row -> v:Value) -> t2:Table`
+-- ### `vcat :: t1:Table * t2:Table -> t3:Table`
+-- ### `hcat :: t1:Table * t2:Table -> t3:Table`
+-- ### `values :: rs:Seq<Row> -> t:Table`
+-- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
+-- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+
+
+-- ## Properties
+
+-- ### `nrows :: t:Table -> n:Number`
+-- ### `ncols :: t:Table -> n:Number`
+-- ### `header :: t:Table -> cs:Seq<ColName>`
+
+
+-- ## Access Subcomponents
+
+-- ### `getRow :: t:Table * n:Number -> r:Row`
+-- ### `getValue :: r:Row * c:ColName -> v:Value`
+-- ### (overloading 1/2) `getColumn :: t:Table * n:Number -> vs:Seq<Value>`
+-- ### (overloading 2/2) `getColumn :: t:Table * c:ColName -> vs:Seq<Value>`
+
+
+-- ## SubTable
+-- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
+-- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`
+-- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
+-- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
+-- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- ### `head :: t1:Table * n:Number -> t2:Table`
+-- ### `distinct :: t1:Table -> t2:Table`
+-- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
+-- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
+
+
+-- ## Ordering
+
+-- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
+-- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
+
+
+-- ## Aggregate
+
+-- ### `count :: t1:Table * c:ColName -> t2:Table`
+-- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
+-- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
+-- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
+
+
+-- ## Missing Values
+
+-- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
+-- ### `dropna :: t1:Table -> t2:Table`
+-- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
+
+
+-- ## Data Cleaning
+
+-- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
+-- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
+
+
+-- ## Utilities
+
+-- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
+-- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
+-- ### `find :: t:Table * r:Row -> n:Error<Number>`
+-- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
+-- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
+-- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
+-- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
+-- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
+-- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
+-- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`
