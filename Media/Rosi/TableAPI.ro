@@ -1,4 +1,5 @@
 import Ro.Base, Data.List
+import EncodeTables
 
 
 -- ## Assumptions
@@ -45,6 +46,7 @@ import Ro.Base, Data.List
 -- ## Constructors
 
 -- ### `emptyTable :: t:Table`
+emptyTable : forall r . (Table r)
 emptyTable = nil
 
 -- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`'
