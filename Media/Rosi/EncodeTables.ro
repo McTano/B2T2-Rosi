@@ -1,0 +1,4 @@
+import Ro.Base, Data.List
+
+type Table : R[*] -> *
+type Table = \r. List (Pi r)
