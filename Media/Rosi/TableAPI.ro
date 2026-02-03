@@ -1,5 +1,5 @@
 import Ro.Base, Data.List
-import EncodeTables
+import EncodeTables, Helpers
 
 
 -- ## Assumptions
@@ -28,7 +28,7 @@ import EncodeTables
 -- `removeAll`: consumes two sequences and produces a subsequence of the first input, removing all elements that also appear in the second input
 
 
--- ### Available Constraints
+-- ### Relations
 
 -- `x` has no duplicates
 -- `x` is equal to `y`
@@ -49,8 +49,14 @@ import EncodeTables
 emptyTable : forall r . (Table r)
 emptyTable = nil
 
--- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`'
+-- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`
+addRows : forall r. Table r ->  Table r -> Table r
+addRows = \tbl rws . append rws tbl
+
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
+addColumn : forall r l v. Table r -> #l -> List v -> Table (r + {l := v})
+addColumn = \ tbl l vals . map (\ pr. (fst pr) ++ (l := (snd pr))) (zip tbl vals)
+
 -- ### `buildColumn :: t1:Table * c:ColName * f:(r:Row -> v:Value) -> t2:Table`
 -- ### `vcat :: t1:Table * t2:Table -> t3:Table`
 -- ### `hcat :: t1:Table * t2:Table -> t3:Table`
