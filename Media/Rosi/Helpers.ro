@@ -1,0 +1,7 @@
+import Ro.Base, Data.List
+
+zip : List a -> List b -> List (Pair a b)
+zip = fix (\zip.
+             ( case #'Nil (const (const nil))
+             | case #'Cons (\xs. (case #'Nil (const nil)
+                                | case #'Cons (\ys . (cons (pair (fst xs) (fst ys)) (zip (snd xs) (snd ys))))))))

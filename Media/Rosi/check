@@ -1,6 +1,10 @@
 #! /bin/zsh
 
 cd ~/Rosi
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI -e Table,emptyTable
+
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi Helpers -e zip
+
+
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI -e Table,emptyTable,addRows,addColumn
 
 cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
