@@ -16,9 +16,6 @@ addRows = \tbl rws . append rws tbl
 addColumn : Table r -> #l -> List v -> Table (r + {l := v})
 addColumn = \ tbl l vals . map (\ pr. pr.'1 ++ (l := pr.'2)) (zip tbl vals)
 
---- NON-BENCHMARK addColumns plural
-
-
 -- ### `buildColumn :: t1:Table * c:ColName * f:(r:Row -> v:Value) -> t2:Table`
 buildColumn : Table r -> #l -> (Pi r -> v) -> Table (r + {l := v})
 buildColumn = \ tbl l f . map (\ pr. pr ++ (l := (f pr))) tbl
@@ -44,6 +41,10 @@ values = id
 -- ## Properties
 
 -- ### `nrows :: t:Table -> n:Number`
+nrows : Table r -> Nat
+nrows = length
+
+
 -- ### `ncols :: t:Table -> n:Number`
 -- ### `header :: t:Table -> cs:Seq<ColName>`
 

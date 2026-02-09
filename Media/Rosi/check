@@ -2,10 +2,19 @@
 
 cd ~/Rosi
 
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi Helpers -e zip
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi Helpers -e zip,length
 
 
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI
+
+
+# constructors
 cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
 -e Table,emptyTable,addRows,addColumn,buildColumn,vcat,hcat,values
+
+# properties
+cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
+-e nrows
+
 
 cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students

@@ -6,3 +6,6 @@ zip = fix (\zip.
               | 'Cons: xs -> 
                     (  'Nil: u -> nil
                     | 'Cons: ys -> cons (pair xs.'1 ys.'1) (zip xs.'2 ys.'2))))
+
+length : List a -> Nat
+length = foldr (\a e. succ e) 0
