@@ -4,16 +4,19 @@ import EncodeTables, Helpers
 -- ## Constructors
 
 -- ### `emptyTable :: t:Table`
-emptyTable : forall r . (Table r)
+emptyTable : Table r
 emptyTable = nil
 
 -- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`
-addRows : forall r. Table r ->  Table r -> Table r
+addRows : Table r ->  Table r -> Table r
 addRows = \tbl rws . append rws tbl
 
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
-addColumn : forall r l v. Table r -> #l -> List v -> Table (r + {l := v})
+addColumn : Table r -> #l -> List v -> Table (r + {l := v})
 addColumn = \ tbl l vals . map (\ pr. (fst pr) ++ (l := (snd pr))) (zip tbl vals)
+
+--- NON-BENCHMARK addColumns plural
+
 
 -- ### `buildColumn :: t1:Table * c:ColName * f:(r:Row -> v:Value) -> t2:Table`
 -- ### `vcat :: t1:Table * t2:Table -> t3:Table`
