@@ -32,6 +32,7 @@ hcat = \ t1 t2 . map (\ pr. pr.'1 ++ pr.'2) (zip t1 t2)
 
 -- ### `values :: rs:Seq<Row> -> t:Table`
 -- our representation just is a sequence of Rows.
+values : List (TableRow r) -> Table r
 values = id
 
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
@@ -46,15 +47,29 @@ nrows = length
 
 
 -- ### `ncols :: t:Table -> n:Number`
+ncols : Table r -> Nat
+ncols = length
+
 -- ### `header :: t:Table -> cs:Seq<ColName>`
+-- PROBLEM: we can't convert labels to strings
 
 
 -- ## Access Subcomponents
 
 -- ### `getRow :: t:Table * n:Number -> r:Row`
+getRow : Table r -> Nat -> Maybe (TableRow r)
+getRow = nth
+
+
 -- ### `getValue :: r:Row * c:ColName -> v:Value`
+getValue : TableRow r -> ({'l:= v} < r => #l -> v)
+getValue = \t l. (prj t) / 'l
+
 -- ### (overloading 1/2) `getColumn :: t:Table * n:Number -> vs:Seq<Value>`
+-- PROBLEM: columns within TableRows aren't ordered
 -- ### (overloading 2/2) `getColumn :: t:Table * c:ColName -> vs:Seq<Value>`
+getColumn : Table r -> ({'l:= v} < r => #l -> List v)
+getColumn = \t l. map (\r.  getValue r l) t
 
 
 -- ## SubTable
