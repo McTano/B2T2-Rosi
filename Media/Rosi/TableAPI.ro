@@ -12,8 +12,9 @@ addRows : Table r ->  Table r -> Table r
 addRows = \tbl rws . append rws tbl
 
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
+-- unenforced constraint, length of list = length of rows
 addColumn : Table r -> #l -> List v -> Table (r + {l := v})
-addColumn = \ tbl l vals . map (\ pr. (fst pr) ++ (l := (snd pr))) (zip tbl vals)
+addColumn = \ tbl l vals . map (\ pr. pr.'1 ++ (l := pr.'2)) (zip tbl vals)
 
 --- NON-BENCHMARK addColumns plural
 
@@ -27,7 +28,15 @@ vcat : Table r -> Table r -> Table r
 vcat = append
 
 -- ### `hcat :: t1:Table * t2:Table -> t3:Table`
+-- Our semantics provide the constraint that the columns in t1 and t2 are disjoint,
+-- unenforced constraint, length of list = length of rows
+hcat : Table r1 -> Table r2 -> Table (r1 + r2)
+hcat = \ t1 t2 . map (\ pr. pr.'1 ++ pr.'2) (zip t1 t2)
+
 -- ### `values :: rs:Seq<Row> -> t:Table`
+-- our representation just is a sequence of Rows.
+values = id
+
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
 -- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
 
