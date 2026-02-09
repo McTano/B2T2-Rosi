@@ -14,7 +14,7 @@ cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
 
 # properties
 cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
--e nrows
+-e nrows,getRow,getValue
 
 
 cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
