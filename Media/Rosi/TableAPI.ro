@@ -22,8 +22,10 @@ addColumn = \ tbl l vals . map (\ pr. (fst pr) ++ (l := (snd pr))) (zip tbl vals
 buildColumn : Table r -> #l -> (Pi r -> v) -> Table (r + {l := v})
 buildColumn = \ tbl l f . map (\ pr. pr ++ (l := (f pr))) tbl
 
-
 -- ### `vcat :: t1:Table * t2:Table -> t3:Table`
+vcat : Table r -> Table r -> Table r
+vcat = append
+
 -- ### `hcat :: t1:Table * t2:Table -> t3:Table`
 -- ### `values :: rs:Seq<Row> -> t:Table`
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
