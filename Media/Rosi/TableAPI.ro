@@ -1,5 +1,5 @@
 import Ro.Base, Data.List
-import EncodeTables, Helpers
+import EncodeTables, Helpers, ExampleTables
 
 -- ## Constructors
 
@@ -26,7 +26,7 @@ vcat = append
 
 -- ### `hcat :: t1:Table * t2:Table -> t3:Table`
 -- Our semantics provide the constraint that the columns in t1 and t2 are disjoint,
--- unenforced constraint, length of list = length of rows
+-- UNENFORCED: length of list = length of rows
 hcat : Table r1 -> Table r2 -> Table (r1 + r2)
 hcat = \ t1 t2 . map (\ pr. pr.'1 ++ pr.'2) (zip t1 t2)
 
@@ -95,6 +95,17 @@ selectColumns2 = \t1. map prj t1
 -- ### `head :: t1:Table * n:Number -> t2:Table`
 -- ### `distinct :: t1:Table -> t2:Table`
 -- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
+
+dropColumn : r2 + {'l := t} ~ r1 => Table r1 -> #l -> Table r2
+dropColumn = \t1 l. map prj t1
+
+dropColumn2 : r2 + {'l := t} ~ r1 => Table r1 -> Table r2
+dropColumn2 = \t1. map prj t1
+
+-- Example
+-- TODO how to evaluate this?
+dropColumnStudents = dropColumn students 'age
+
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
 
