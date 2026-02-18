@@ -12,7 +12,7 @@ addRows : Table r ->  Table r -> Table r
 addRows = \tbl rws . append rws tbl
 
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
--- unenforced constraint, length of list = length of rows
+-- UNENFORCED: length of list = length of rows
 addColumn : Table r -> #l -> List v -> Table (r + {l := v})
 addColumn = \ tbl l vals . map (\ pr. pr.'1 ++ (l := pr.'2)) (zip tbl vals)
 
@@ -74,10 +74,24 @@ getColumn = \t l. map (\r.  getValue r l) t
 
 -- ## SubTable
 -- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
--- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`
+-- definable
+
+-- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`]
+-- definable
+
 -- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
+-- PROBLEM: columns not ordered
 -- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
+-- PROBLEM: columns not ordered
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+
+selectColumns : r2 < r1 => Table r1 -> Pi (Labels r2) -> Table r2
+selectColumns = \t1 ls. map prj t1
+
+-- more Rosi-like version
+selectColumns2 : r2 < r1 => Table r1 -> Table r2
+selectColumns2 = \t1. map prj t1
+
 -- ### `head :: t1:Table * n:Number -> t2:Table`
 -- ### `distinct :: t1:Table -> t2:Table`
 -- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`

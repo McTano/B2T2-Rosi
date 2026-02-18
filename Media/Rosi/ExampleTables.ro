@@ -1,4 +1,4 @@
-import EncodeTables, Data.List
+import EncodeTables, Data.List, Ro.Base
 -- ## `students`: a simple table with no values missing
 
 -- ```lua
@@ -14,6 +14,11 @@ students = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue")
            (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
            (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")
                  nil))
+
+
+-- example : Labels {'name := String, 'age := Nat, 'favorite_color := String}
+-- example = syn students.'1
+
 
 -- ## `studentsMissing`: a simple table with some values missing
 
