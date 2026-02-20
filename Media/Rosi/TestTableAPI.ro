@@ -1,0 +1,33 @@
+import Ro.Base
+import TableAPI, ExampleTables
+
+-- we can omit the type annotation for this version
+-- selectColumnsStudents : Table {'name := String, 'favorite_color := String}
+selectColumnsStudents = selectColumns students ('favorite_color := tt, 'name := tt)
+
+-- need type annotation to determine behavior
+-- value with inferred type would be
+-- \p TableAPI.selectColumns2 [{'age := Mu (\n : *. Sigma {'Succ := n, 'Zero := Pi {}}), 'favorite_color := String, 'name := String}] [a#44] [VVar 0] (ExampleTables.students)
+selectColumns2Students : Table {'name := String, 'favorite_color := String}
+selectColumns2Students = selectColumns2 students
+
+
+selectColumnsStudentsExpected : Table {'name := String, 'favorite_color := String}
+selectColumnsStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
+           (cons ('name := "Alice", 'favorite_color := "green")
+           (cons ('name := "Eve", 'favorite_color := "red")
+                 nil))
+
+-- we can omit the type annotation for this version
+-- dropColumnStudents : Table {'name := String, 'favorite_color := String}
+dropColumnStudents = dropColumn students 'age
+
+-- need type annotation to determine behavior
+dropColumn2Students : Table {'name := String, 'favorite_color := String}
+dropColumn2Students = dropColumn2 students
+
+-- dropColumnStudentsExpected : Table {'name := String, 'favorite_color := String}
+dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
+           (cons ('name := "Alice", 'favorite_color := "green")
+           (cons ('name := "Eve", 'favorite_color := "red")
+                 nil))

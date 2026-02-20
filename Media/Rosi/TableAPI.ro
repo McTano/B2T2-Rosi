@@ -1,5 +1,5 @@
 import Ro.Base, Data.List
-import EncodeTables, Helpers, ExampleTables
+import EncodeTables, Helpers
 
 -- ## Constructors
 
@@ -53,7 +53,6 @@ ncols = length
 -- ### `header :: t:Table -> cs:Seq<ColName>`
 -- PROBLEM: we can't convert labels to strings
 
-
 -- ## Access Subcomponents
 
 -- ### `getRow :: t:Table * n:Number -> r:Row`
@@ -88,23 +87,20 @@ getColumn = \t l. map (\r.  getValue r l) t
 selectColumns : r2 < r1 => Table r1 -> Pi (Labels r2) -> Table r2
 selectColumns = \t1 ls. map prj t1
 
+
 -- more Rosi-like version
 selectColumns2 : r2 < r1 => Table r1 -> Table r2
 selectColumns2 = \t1. map prj t1
 
 -- ### `head :: t1:Table * n:Number -> t2:Table`
 -- ### `distinct :: t1:Table -> t2:Table`
--- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
+-- ### `dropColumn :: t1:Table * c:ColName -> t2:Table` 
 
-dropColumn : r2 + {'l := t} ~ r1 => Table r1 -> #l -> Table r2
+dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
 dropColumn = \t1 l. map prj t1
 
-dropColumn2 : r2 + {'l := t} ~ r1 => Table r1 -> Table r2
+dropColumn2 : r2 < r1 => Table r1 -> Table r2
 dropColumn2 = \t1. map prj t1
-
--- Example
--- TODO how to evaluate this?
-dropColumnStudents = dropColumn students 'age
 
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
