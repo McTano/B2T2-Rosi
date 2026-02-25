@@ -1,4 +1,4 @@
-import Ro.Base, Data.List
+import Ro.Base, Data.List, Data.Nat
 
 zip : List a -> List b -> List (Pair a b)
 zip = fix (\zip.
@@ -6,6 +6,15 @@ zip = fix (\zip.
               | 'Cons: xs -> 
                     (  'Nil: u -> nil
                     | 'Cons: ys -> cons (pair xs.'1 ys.'1) (zip xs.'2 ys.'2))))
+
+enumerateHelper : Nat -> List a -> List (Pair a Nat)
+enumerateHelper = fix (\enumerateHelper n.
+                                    ( 'Nil: u -> nil
+                                    | 'Cons: xs -> cons (pair (xs.'1) n) (enumerateHelper (succ n) xs.'2)))
+
+enumerate : List a -> List (Pair a Nat)
+enumerate = enumerateHelper 0
+
 
 length : List a -> Nat
 length = foldr (\a e. succ e) 0

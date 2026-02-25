@@ -31,3 +31,24 @@ dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
            (cons ('name := "Alice", 'favorite_color := "green")
            (cons ('name := "Eve", 'favorite_color := "red")
                  nil))
+
+dropColumnsStudents = dropColumns students ('age := tt, 'favorite_color := tt)
+
+dropColumns2Students : Table {'name := String}
+dropColumns2Students = dropColumns2 students
+
+-- I get an interesting error when I remove this type annotation
+-- dropColumnsStudentsExpected : Table {'name := String}
+-- dropColumnsStudentsExpected : List (Sigma {'name := String})
+dropColumnsStudentsExpected = cons ('name := "Bob")
+                                    (cons ('name := "Alice")
+                                    (cons ('name := "Eve")
+                                          nil))
+
+selectStudents : Table {'id := Nat, 'name := String}
+selectStudents = select students (\p. (prj p.'1) ++ ('id := p.'2))
+
+selectStudentsExpected = cons ('id := 0, 'name := "Bob")
+                              (cons ('id := 1, 'name := "Alice")
+                              (cons ('id := 2, 'name := "Eve")
+                                          nil))

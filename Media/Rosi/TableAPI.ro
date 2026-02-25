@@ -84,7 +84,7 @@ getColumn = \t l. map (\r.  getValue r l) t
 -- PROBLEM: columns not ordered
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 
-selectColumns : r2 < r1 => Table r1 -> Pi (Labels r2) -> Table r2
+selectColumns : cs < r1 => Table r1 -> Pi (Labels cs) -> Table cs
 selectColumns = \t1 ls. map prj t1
 
 
@@ -105,10 +105,17 @@ dropColumn2 = \t1. map prj t1
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
 
+dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
+dropColumns = \t1 cs. map prj t1
+
+-- Rosi-like version is identical to singular dropColumn because the implicit argument can be one or more tables
+dropColumns2 : r2 < r1 => Table r1 -> Table r2
+dropColumns2 = \t1. map prj t1
 
 -- ## Ordering
 
 -- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
+-- TODO: define sorting
 -- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 
@@ -116,6 +123,10 @@ dropColumn2 = \t1. map prj t1
 -- ## Aggregate
 
 -- ### `count :: t1:Table * c:ColName -> t2:Table`
+-- TODO: Dictionary Interface and Implementation
+-- haskelly - call it Data.Map
+-- Interface is like module
+-- encode existentials with forall
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
@@ -144,6 +155,10 @@ dropColumn2 = \t1. map prj t1
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
+
+select : Table r1 -> (Pair (TableRow r1) Nat -> TableRow r2) -> Table r2
+select = \t1 f. map f (enumerate t1)
+
 -- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
 -- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
 -- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`
