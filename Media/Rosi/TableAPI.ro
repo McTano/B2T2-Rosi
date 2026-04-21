@@ -61,13 +61,13 @@ getRow = nth
 
 
 -- ### `getValue :: r:Row * c:ColName -> v:Value`
-getValue : TableRow r -> ({'l:= v} < r => #l -> v)
-getValue = \t l. (prj t) / 'l
+getValue : TableRow r -> ({l:= v} < r => #l -> v)
+getValue = \t l. t.l
 
 -- ### (overloading 1/2) `getColumn :: t:Table * n:Number -> vs:Seq<Value>`
 -- PROBLEM: columns within TableRows aren't ordered
 -- ### (overloading 2/2) `getColumn :: t:Table * c:ColName -> vs:Seq<Value>`
-getColumn : Table r -> ({'l:= v} < r => #l -> List v)
+getColumn : Table r -> ({l:= v} < r => #l -> List v)
 getColumn = \t l. map (\r.  getValue r l) t
 
 
@@ -127,6 +127,7 @@ dropColumns2 = \t1. map prj t1
 -- haskelly - call it Data.Map
 -- Interface is like module
 -- encode existentials with forall
+-- `count` needs to take in a label argument, go through the table and return a table with columns "value" and "count"
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`

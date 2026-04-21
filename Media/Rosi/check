@@ -2,26 +2,32 @@
 
 cd ~/Rosi
 
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi Helpers -e zip,length
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi Helpers -e zip,length,Dict,eqStr,expectTrue1,expectTrue2,expectFalse
 
 
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI
 
 
 # constructors
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
 -e Table,emptyTable,addRows,addColumn,buildColumn,vcat,hcat,values
 
 # properties
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TableAPI \
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
 -e nrows,getRow,getValue,selectColumns,selectColumns2,dropColumn,dropColumn2
 
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi
+
 # Access Subcomponents
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 -e selectColumnsStudents,selectColumns2Students,selectColumnsStudentsExpected,dropColumnStudents,dropColumn2Students,dropColumnStudentsExpected,dropColumnsStudents,dropColumns2Students,dropColumnsStudentsExpected
 
 # utilities
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 -e selectStudents,selectStudentsExpected
 
-cabal run Rosi -- -i rolib -i examples -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
+# ExampleTables
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
+
+# Helpers
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e get1,get2,get3,getMissing,getEmpty

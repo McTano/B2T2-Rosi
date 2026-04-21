@@ -1,0 +1,17 @@
+import Ro.Base, Data.Nat
+import Helpers
+
+dict = (cons (pair 1 "One")
+             (cons (pair 2 "Two")
+                    (cons (pair 3 "Three")
+                    nil
+                    )
+              ))
+
+emptyDict = nil
+
+get1 = getD dict equal 1
+get2 = getD dict equal 2
+get3 = getD dict equal 3
+getMissing = getD dict equal 4
+getEmpty = getD emptyDict equal  1

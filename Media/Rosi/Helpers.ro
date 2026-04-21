@@ -16,5 +16,33 @@ enumerate : List a -> List (Pair a Nat)
 enumerate = enumerateHelper 0
 
 
+
 length : List a -> Nat
 length = foldr (\a e. succ e) 0
+
+
+-- TODO : define or find string equality.
+-- eqStr : Eq String
+-- eqStr = \x y. eqString x y
+
+-- expectTrue1 = eqStr "" ""
+-- expectTrue2 = eqStr "a string" "a string"
+
+-- expectFalse = eqStr "a string" "another, non-equal string"
+
+-- type DictI : * -> * -> *
+-- type DictI = \v d. Pi {
+--       'get := d -> String -> Maybe v,
+--       'update:= d -> String -> v -> d
+--       }
+
+type Dict : * -> * -> *
+type Dict = \k v . List (Pair k v)
+
+getD : Dict k v -> Eq k -> k -> Maybe v
+getD = fix (\getD d eq k.
+                  (  'Nil: u -> Nothing
+                  |  'Cons: ys -> if (eq ys.'1.'1 k)
+                                       (Just ys.'1.'2)
+                                       (getD ys.'2 eq k)
+                  ) d)
