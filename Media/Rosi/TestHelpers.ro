@@ -15,3 +15,9 @@ get2 = getD dict equal 2
 get3 = getD dict equal 3
 getMissing = getD dict equal 4
 getEmpty = getD emptyDict equal  1
+
+set1 = setD dict equal 1 "NewOne"
+set2 = setD dict equal 2 "NewTwo"
+set3 = setD dict equal 3 "NewThree"
+setMissing = setD dict equal 7 "Lucky number 7"
+setEmpty = setD emptyDict equal 7 "Lucky number 7"

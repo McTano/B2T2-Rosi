@@ -30,4 +30,4 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
 
 # Helpers
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e get1,get2,get3,getMissing,getEmpty
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty

@@ -46,3 +46,11 @@ getD = fix (\getD d eq k.
                                        (Just ys.'1.'2)
                                        (getD ys.'2 eq k)
                   ) d)
+
+setD : Dict k v -> Eq k -> k -> v -> Dict k v
+setD = fix (\setD d eq k v.
+                  (  'Nil: u -> (cons (pair k v) nil)
+                  |  'Cons: ys -> if (eq ys.'1.'1 k)
+                                      (cons (pair k v) ys.'2)
+                                      (cons (ys.'1) (setD ys.'2 eq k v))
+                  ) d)
