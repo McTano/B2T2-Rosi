@@ -8,7 +8,6 @@ dict = (cons (pair 1 "One")
                     )
               ))
 
-emptyDict = nil
 
 get1 = getD dict equal 1
 get2 = getD dict equal 2
@@ -21,3 +20,14 @@ set2 = setD dict equal 2 "NewTwo"
 set3 = setD dict equal 3 "NewThree"
 setMissing = setD dict equal 7 "Lucky number 7"
 setEmpty = setD emptyDict equal 7 "Lucky number 7"
+
+countDict = (cons (pair 3 11)
+                  (cons (pair 5 13)
+                        (cons (pair 7 17)
+                              nil)))
+
+inc1 = inc countDict equal 3 -- 11
+inc2 = inc inc1 equal 5 -- 14
+inc3 = inc inc2 equal 7 -- 17
+incMissing = inc inc3 equal 19
+incEmpty = inc emptyDict (const (const False)) "Fresh key"

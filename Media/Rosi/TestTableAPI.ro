@@ -52,3 +52,21 @@ selectStudentsExpected = cons ('id := 0, 'name := "Bob")
                               (cons ('id := 1, 'name := "Alice")
                               (cons ('id := 2, 'name := "Eve")
                                           nil))
+
+countableTable : Table {'name:= String, 'favorite_number := Nat}
+countableTable = cons ('name := "Bob", 'favorite_number := 9)
+                                    (cons ('name := "Alice", 'favorite_number := 9)
+                                    (cons ('name := "Eve", 'favorite_number := 9)
+                                          (cons ('name := "Stew", 'favorite_number := 4)
+                                                (cons ('name := "Other Alice", 'favorite_number := 4)
+                                                      (cons ('name := "Terrible Steve", 'favorite_number := 1)
+                                                            nil)))))
+
+countFavoriteNumber = count countableTable 'favorite_number equal
+
+-- TODO: implement string equality so I can get a less ridiculous example
+-- countStudentsFavoriteColor = count students 'favorite_color
+-- countStudentsFavoriteColorExpected = (cons ('value := "blue", count := 1)
+--                                   (cons ('value := "green", count := 1)
+--                                   (cons ('value := "red", count := 1)
+--                                         nil)))

@@ -36,8 +36,15 @@ length = foldr (\a e. succ e) 0
 --       'update:= d -> String -> v -> d
 --       }
 
+-- TODO: Dictionary Interface and Implementation
+-- haskelly - call it Data.Map
+-- Interface is like module
+-- encode existentials with forall
 type Dict : * -> * -> *
 type Dict = \k v . List (Pair k v)
+
+emptyDict : Dict k v
+emptyDict = nil
 
 getD : Dict k v -> Eq k -> k -> Maybe v
 getD = fix (\getD d eq k.
@@ -52,5 +59,11 @@ setD = fix (\setD d eq k v.
                   (  'Nil: u -> (cons (pair k v) nil)
                   |  'Cons: ys -> if (eq ys.'1.'1 k)
                                       (cons (pair k v) ys.'2)
-                                      (cons (ys.'1) (setD ys.'2 eq k v))
+                                      (cons ys.'1 (setD ys.'2 eq k v))
+                  ) d)
+
+inc : Dict k Nat -> Eq k -> k -> Dict k Nat
+inc = fix (\inc d eq k.
+                  ( 'Nil: u -> (cons (pair k 1) nil)
+                  | 'Cons: ys -> (cons ys.'1) (inc ys.'2 eq k)
                   ) d)
