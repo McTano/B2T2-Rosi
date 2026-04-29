@@ -9,7 +9,7 @@ emptyTable = nil
 
 -- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`
 addRows : Table r ->  Table r -> Table r
-addRows = \tbl rws . append rws tbl
+addRows = append
 
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
 -- UNENFORCED: length of list = length of rows
