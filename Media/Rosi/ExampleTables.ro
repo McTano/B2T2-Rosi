@@ -9,7 +9,10 @@ import EncodeTables, Data.List, Ro.Base
 -- | "Eve"   | 13  | "red"          |
 -- ```
 
-students : Table {'name := String, 'age := Nat, 'favorite_color := String}
+type StudentsTable : *
+type StudentsTable = Table {'name := String, 'age := Nat, 'favorite_color := String}
+
+students : StudentsTable
 students = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue")
            (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
            (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")

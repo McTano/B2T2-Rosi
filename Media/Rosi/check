@@ -9,12 +9,12 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI
 
 
 # constructors
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
--e Table,emptyTable,addRows,addColumn,buildColumn,vcat,hcat,values
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
+# -e Table,emptyTable,addRows,addColumn,buildColumn,vcat,hcat,values
 
 # properties
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
--e nrows,getRow,getValue,selectColumns,selectColumns2,dropColumn,dropColumn2
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
+# -e nrows,getRow,getValue,selectColumns,selectColumns2,dropColumn,dropColumn2
 
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi
 
@@ -33,9 +33,8 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
 
 # Helpers
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
 
 # aggregate
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e countFavoriteNumber
-# countStudentsFavoriteColor,countStudentsFavoriteColorExpected
+-e countFavoriteNumber,falseVal,countStudentsFavoriteColor,countStudentsFavoriteColorExpected
