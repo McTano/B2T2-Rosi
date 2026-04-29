@@ -63,7 +63,4 @@ setD = fix (\setD d eq k v.
                   ) d)
 
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
-inc = fix (\inc d eq k.
-                  ( 'Nil: u -> (cons (pair k 1) nil)
-                  | 'Cons: ys -> (cons ys.'1) (inc ys.'2 eq k)
-                  ) d)
+inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
