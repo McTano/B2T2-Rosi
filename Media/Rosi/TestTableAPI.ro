@@ -58,10 +58,16 @@ studentsWithDupeColors = (cons ('name := "Colton", 'age := 8, 'favorite_color :=
                                                      (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green")
                                                             students))
 
-countStudentsFavoriteColor = count studentsWithDupeColors 'favorite_color (~)
+studentsFavoriteColorsAsDict = countHelper studentsWithDupeColors 'favorite_color (~)
 
-countStudentsFavoriteColorExpected : Table {'value := String, 'count := Nat}
-countStudentsFavoriteColorExpected = (cons ('value := "red", 'count := 2)
+getDictSuccess = getD studentsFavoriteColorsAsDict (~) "red"
+getDictFailure = getD studentsFavoriteColorsAsDict (~) "pink"
+
+
+studentsFavoriteColorsAsTable = count studentsWithDupeColors 'favorite_color (~)
+
+studentsFavoriteColorsAsTableExpected : Table {'value := String, 'count := Nat}
+studentsFavoriteColorsAsTableExpected = (cons ('value := "red", 'count := 2)
                                           (cons ('value := "green", 'count := 2)
                                                 (cons ('value := "blue", 'count := 2)
                                                       nil)))

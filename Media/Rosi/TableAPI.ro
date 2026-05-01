@@ -133,7 +133,6 @@ countDictToTable = \d. foldr (\e a. cons ('value := e.'1, 'count := e.'2) a) nil
 count : {l := v} < r => Table r -> #l -> Eq v -> Table {'value := v, 'count := Nat}
 count = \tb l eq. countDictToTable (countHelper tb l eq)
 
-
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
