@@ -65,3 +65,30 @@ countStudentsFavoriteColorExpected = (cons ('value := "red", 'count := 2)
                                           (cons ('value := "green", 'count := 2)
                                                 (cons ('value := "blue", 'count := 2)
                                                       nil)))
+
+type ExampleRow : R[*]
+type ExampleRow = {'Left := String, 'Right := String}
+
+type VariantType : *
+type VariantType = Sigma ExampleRow
+
+concreteVariant : VariantType
+concreteVariant = inj ('Left := "Bob")
+
+concreteVariantInList : List VariantType
+concreteVariantInList = cons concreteVariant nil
+
+l'' : #'Example
+l'' = 'Example
+
+labeledWithVar : Sigma {'Example := String}
+labeledWithVar = inj (l'' := "Basketball")
+
+labeledWithVarViaCon : Sigma {'Example := String}
+labeledWithVarViaCon = con l'' "Basketball"
+
+labeledWithShorthand : Sigma {'Example := String}
+labeledWithShorthand = 'Example: "Basketball"
+
+labeledWithShorthandVar : Sigma {'Example := String}
+labeledWithShorthandVar = l'': "Basketball"

@@ -36,5 +36,9 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
 
 # aggregate
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 -e countFavoriteNumber,falseVal,countStudentsFavoriteColor,countStudentsFavoriteColorExpected
+
+# test printing
+cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e concreteVariant,concreteVariantInList,labeledWithVar,labeledWithVarViaCon,labeledWithShorthand,labeledWithShorthandVar
