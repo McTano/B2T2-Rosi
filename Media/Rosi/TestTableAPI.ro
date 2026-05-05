@@ -1,6 +1,13 @@
 import Ro.Base
 import TableAPI, ExampleTables
 
+
+bracesTable = (cons ('has_braces := True)
+                    (cons ('has_braces := False)
+                           nil))
+
+crossJoinExample = crossJoin students bracesTable
+
 -- we can omit the type annotation for this version
 -- selectColumnsStudents : Table {'name := String, 'favorite_color := String}
 selectColumnsStudents = selectColumns students ('favorite_color := tt, 'name := tt)

@@ -36,8 +36,27 @@ values : List (TableRow r) -> Table r
 values = id
 
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
--- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- Requires:
+--   concat(header(t1), header(t2)) has no duplicates
+-- Ensures:
+--   schema(t3) is equal to concat(schema(t1), schema(t2))
+--   nrows(t3) is equal to nrows(t1) * nrows(t2)
+-- Computes the cartesian product of two tables.
+crossJoin : r1 + r2 ~ r3 => Table r1 -> Table r2 -> Table r3
+crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 
+-- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- ##### Requires:
+-- - `cs` has no duplicates
+-- - for all `c` in `cs`, `c` is in `header(t1)`
+-- - for all `c` in `cs`, `c` is in `header(t2)`
+-- - for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t2)[c]`
+-- - `concat(header(t1), removeAll(header(t2), cs))` has no duplicates
+
+
+-- TODO need equality operators for everything in cs.
+leftJoin : cs + r1' ~ r1, cs + r2' ~ r2, r1' + r2' + cs ~ r3  => Table r1 -> Table r2 -> Pi cs -> Pi (Eq cs) -> Table r3
+leftJoin = \t1 t2 cs eqs. sorry
 
 -- ## Properties
 

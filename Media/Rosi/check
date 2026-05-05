@@ -9,8 +9,8 @@ cd ~/Rosi
 
 
 # constructors
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
-# -e Table,emptyTable,addRows,addColumn,buildColumn,vcat,hcat,values
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e crossJoinExample
 
 # properties
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
