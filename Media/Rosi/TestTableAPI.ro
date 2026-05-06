@@ -23,11 +23,11 @@ grades = cons ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm :=
                                             nil))
 
 
-leftJoinExample1 = leftJoin students grades ('name := tt, 'age := tt) (eqP ('name := (~), 'age := equal))
+leftJoinExample1 = leftJoin students grades (eqP ('name := (~), 'age := equal))
 
-leftJoinExample1Expected = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
-                                (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
-                                      (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+leftJoinExample1Expected = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
+                                (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
+                                      (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
                                             nil))
 
 -- we can omit the type annotation for this version

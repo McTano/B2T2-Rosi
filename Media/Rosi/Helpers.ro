@@ -93,6 +93,9 @@ every = /\a. \x. syn #(\X. a) (\l. x)
 idRec : Pi z -> Pi z
 idRec = \r. syn #Id (\l. r.l)
 
+liftMaybe : Pi z -> Pi (Maybe * z)
+liftMaybe = \r. syn #Maybe (\l. Just r.l)
+
 nothingRecord : Pi (Maybe* z)
 nothingRecord = syn #Maybe (const Nothing)
 

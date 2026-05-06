@@ -53,24 +53,20 @@ crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 -- - for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t2)[c]`
 -- - `concat(header(t1), removeAll(header(t2), cs))` has no duplicates
 
--- sel1 : {l := v} < z => Pi z -> #l -> v
--- sel1 = \z l. sel z l
-
--- selFields : y < z => Pi z -> Pi (Eq y) -> Maybe (Pi y)
--- selFields = \z y. Just (prj z)
-
 match : cs < r1, cs < r2 => Pi r1 -> (Eq (Pi cs)) -> Pi r2 -> Bool
 match = \r1 eqs r2. (eqs (prj r1) (prj r2))
 
-leftJoinSingle : cs < r1, cs + r2' ~ r2, r1 + r2' ~ r3 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Maybe (Pi r2)
-leftJoinSingle = \r1 eqs t2. find (match r1 eqs) t2
+leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Pi (r1 + (Maybe* r2'))
+-- TODO in success, map Just over the matching row,
+--      in failure, return nothing Record
+leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybe (prj x))
+                                        | 'Nothing: u -> nothingRecord)
+                                            (find (match r1 eqs) t2)
+                                
 
-leftJoin : cs < r1, cs + r2' ~ r2, r1 + r2' ~ r3 => Table r1 -> Table r2 -> Pi (Labels cs) -> Eq (Pi cs) -> Table r3
-leftJoin = \t1 t2 cs eqs. foldr
-                              (\r1 a. 
-                                    ('Nothing: u -> a
-                                    | 'Just: x -> cons (r1 ++ (prj x)) a)
-                                      (find (match r1 eqs) t2))
+leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
+leftJoin = \t1 t2 eqs. foldr
+                              (\r1 a. cons (leftJoinSingle r1 eqs t2) a)
                               nil
                               t1
 
@@ -191,6 +187,7 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
+
 -- ### `find :: t:Table * r:Row -> n:Error<Number>`
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
@@ -203,4 +200,3 @@ select = \t1 f. map f (enumerate t1)
 -- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
 -- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
 -- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`
-
