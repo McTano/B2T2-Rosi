@@ -172,6 +172,9 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- ## Missing Values
 
 -- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
+completeCases : {l := v} < r1 => Table (Maybe* r1) -> #l -> List Bool
+completeCases = \t1 l. map (\r. isJust (r.l)) t1
+
 -- ### `dropna :: t1:Table -> t2:Table`
 -- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
 
