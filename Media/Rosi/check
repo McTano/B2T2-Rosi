@@ -33,7 +33,8 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
 
 # Helpers
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
+-e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty,nothingRecordExample,nothingRecordExampleExpected,eqPExample,nothingRecordPrj
 
 # aggregate
 # cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
@@ -41,8 +42,8 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 
 # test printing
 
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableApi \
--e studentsWithDupeColors,studentsFavoriteColorsAsDict,getDictSuccess,getDictFailure,studentsFavoriteColorsAsTable
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableApi \
+# -e studentsWithDupeColors,studentsFavoriteColorsAsDict,getDictSuccess,getDictFailure,studentsFavoriteColorsAsTable
 #  -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
 # -e concreteVariant,concreteVariantInList,labeledWithVar,labeledWithVarViaCon,labeledWithShorthand,labeledWithShorthandVar
 

@@ -25,7 +25,6 @@ find = fix (\find f.
 length : List a -> Nat
 length = foldr (\a e. succ e) 0
 
-
 -- TODO : define or find string equality.
 -- eqStr : Eq String
 -- eqStr = \x y. eqString x y
@@ -69,3 +68,38 @@ setD = fix (\setD d eq k v.
 
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
 inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
+
+-- type Split : R[*] -> R[*] -> R[*]
+-- type Split = forall ms vs: R[*]. Pi ((Maybe ms) + vs) -> Pi {'1 := Maybe (Pi ms), '2 := Pi vs}
+
+isJust : Maybe a -> Bool
+isJust = maybe False (const True)
+
+isJusts : Fold z => Pi (Maybe* z) -> Bool
+isJusts = fold #Maybe (const isJust) and True
+
+eqP : Fold z => Pi (Eq z) -> Eq (Pi z)
+eqP = \ d r. fold #(\t. t) (\l x. d.l r.l x) and True
+
+-- nothingRecord : Fold r => Pi r -> Pi (Maybe* r)
+-- nothingRecord = fold #(\t. t) (\l x. (l := Nothing)) (++) tt
+
+every : a -> Pi ((Const a)* z)
+every = /\a. \x. syn #(\X. a) (\l. x)
+
+-- everyExample : Pi ((Const Bool)* {'foo := Nat, 'bar := String})
+-- everyExample = every True ('foo := 2, 'bar := "hello")
+
+idRec : Pi z -> Pi z
+idRec = \r. syn #Id (\l. r.l)
+
+nothingRecord : Pi (Maybe* z)
+nothingRecord = syn #Maybe (const Nothing)
+
+nothingRecordExampleInput : Pi {'1 := Nat, '2 := String}
+nothingRecordExampleInput = ('1 := 1, '2 := "2")
+
+nothingRecordExample : Pi {'1 := Maybe Nat, '2 := Maybe String}
+nothingRecordExample = prj (nothingRecord [{'1 := Nat, '2 := String}])
+
+nothingRecordExampleExpected = ('1 := Nothing, '2 := Nothing)
