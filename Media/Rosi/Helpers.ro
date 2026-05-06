@@ -75,9 +75,6 @@ liftMaybe = \r. syn #Maybe (\l. Just r.l)
 nothingRecord : Pi (Maybe* z)
 nothingRecord = syn #Maybe (const Nothing)
 
-nothingRecordExampleInput : Pi {'1 := Nat, '2 := String}
-nothingRecordExampleInput = ('1 := 1, '2 := "2")
-
 nothingRecordExample : Pi {'1 := Maybe Nat, '2 := Maybe String}
 nothingRecordExample = prj (nothingRecord [{'1 := Nat, '2 := String}])
 
