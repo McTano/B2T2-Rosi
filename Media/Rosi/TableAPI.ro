@@ -179,7 +179,11 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- ## Data Cleaning
 
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
+-- PROBLEM: requires t2 to have a column containing labels (column names) as values (Strings?)
+
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
+-- PROBLEM: requires converting strings to labels
+
 
 
 -- ## Utilities
