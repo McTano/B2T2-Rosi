@@ -69,30 +69,6 @@ setD = fix (\setD d eq k v.
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
 inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
 
--- type Split : R[*] -> R[*] -> R[*]
--- type Split = forall ms vs: R[*]. Pi ((Maybe ms) + vs) -> Pi {'1 := Maybe (Pi ms), '2 := Pi vs}
-
-isJust : Maybe a -> Bool
-isJust = maybe False (const True)
-
-isJusts : Fold z => Pi (Maybe* z) -> Bool
-isJusts = fold #Maybe (const isJust) and True
-
-eqP : Fold z => Pi (Eq z) -> Eq (Pi z)
-eqP = \ d r. fold #(\t. t) (\l x. d.l r.l x) and True
-
--- nothingRecord : Fold r => Pi r -> Pi (Maybe* r)
--- nothingRecord = fold #(\t. t) (\l x. (l := Nothing)) (++) tt
-
-every : a -> Pi ((Const a)* z)
-every = /\a. \x. syn #(\X. a) (\l. x)
-
--- everyExample : Pi ((Const Bool)* {'foo := Nat, 'bar := String})
--- everyExample = every True ('foo := 2, 'bar := "hello")
-
-idRec : Pi z -> Pi z
-idRec = \r. syn #Id (\l. r.l)
-
 liftMaybe : Pi z -> Pi (Maybe * z)
 liftMaybe = \r. syn #Maybe (\l. Just r.l)
 
