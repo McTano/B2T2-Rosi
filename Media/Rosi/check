@@ -10,7 +10,7 @@ cd ~/Rosi
 
 # constructors
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e crossJoinExample
+-e crossJoinExample,leftJoinExample1,leftJoinExample1Expected
 
 # properties
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \

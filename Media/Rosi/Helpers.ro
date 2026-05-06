@@ -15,7 +15,12 @@ enumerateHelper = fix (\enumerateHelper n.
 enumerate : List a -> List (Pair a Nat)
 enumerate = enumerateHelper 0
 
-
+find : (a -> Bool) -> List a -> Maybe a
+find = fix (\find f.
+                    ( 'Nil: u -> Nothing
+                    | 'Cons: xs -> (if (f xs.'1)
+                                      (Just xs.'1)
+                                      (find f xs.'2))))
 
 length : List a -> Nat
 length = foldr (\a e. succ e) 0

@@ -53,10 +53,26 @@ crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 -- - for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t2)[c]`
 -- - `concat(header(t1), removeAll(header(t2), cs))` has no duplicates
 
+-- sel1 : {l := v} < z => Pi z -> #l -> v
+-- sel1 = \z l. sel z l
 
--- TODO need equality operators for everything in cs.
-leftJoin : cs + r1' ~ r1, cs + r2' ~ r2, r1' + r2' + cs ~ r3  => Table r1 -> Table r2 -> Pi cs -> Pi (Eq cs) -> Table r3
-leftJoin = \t1 t2 cs eqs. sorry
+-- selFields : y < z => Pi z -> Pi (Eq y) -> Maybe (Pi y)
+-- selFields = \z y. Just (prj z)
+
+match : cs < r1, cs < r2 => Pi r1 -> (Eq (Pi cs)) -> Pi r2 -> Bool
+match = \r1 eqs r2. (eqs (prj r1) (prj r2))
+
+leftJoinSingle : cs < r1, cs + r2' ~ r2, r1 + r2' ~ r3 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Maybe (Pi r2)
+leftJoinSingle = \r1 eqs t2. find (match r1 eqs) t2
+
+leftJoin : cs < r1, cs + r2' ~ r2, r1 + r2' ~ r3 => Table r1 -> Table r2 -> Pi (Labels cs) -> Eq (Pi cs) -> Table r3
+leftJoin = \t1 t2 cs eqs. foldr
+                              (\r1 a. 
+                                    ('Nothing: u -> a
+                                    | 'Just: x -> cons (r1 ++ (prj x)) a)
+                                      (find (match r1 eqs) t2))
+                              nil
+                              t1
 
 -- ## Properties
 

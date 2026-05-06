@@ -2,11 +2,33 @@ import Ro.Base
 import TableAPI, ExampleTables
 
 
+type BracesRow : R[*]
+type BracesRow = {'has_braces := Bool }
+
+bracesTable : Table BracesRow
 bracesTable = (cons ('has_braces := True)
                     (cons ('has_braces := False)
                            nil))
 
+crossJoinExample : Table (StudentsRow + BracesRow)
 crossJoinExample = crossJoin students bracesTable
+
+type GradesRow : R[*]
+type GradesRow = {'name := String, 'age := Nat, 'quiz1 := Nat, 'quiz2 := Nat, 'midterm := Nat}
+
+grades : Table GradesRow
+grades = cons ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
+                                (cons ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
+                                      (cons ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+                                            nil))
+
+
+leftJoinExample1 = leftJoin students grades ('name := tt, 'age := tt) (eqP ('name := (~), 'age := equal))
+
+leftJoinExample1Expected = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
+                                (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
+                                      (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+                                            nil))
 
 -- we can omit the type annotation for this version
 -- selectColumnsStudents : Table {'name := String, 'favorite_color := String}
