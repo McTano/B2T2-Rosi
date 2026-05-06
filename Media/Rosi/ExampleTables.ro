@@ -22,6 +22,13 @@ students = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue")
                  nil))
 
 
+studentsWithDupeColors : StudentsTable
+studentsWithDupeColors = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
+                                                     (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green")
+                                                            students))
+
+
+
 -- example : Labels {'name := String, 'age := Nat, 'favorite_color := String}
 -- example = syn students.'1
 
