@@ -152,13 +152,13 @@ head : Table r1 -> Nat -> Table r1
 head = \t1 n. takeN t1 n
 
 -- ### `distinct :: t1:Table -> t2:Table`
--- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
 
+-- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
 dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
 dropColumn = \t1 l. map prj t1
 
-dropColumn2 : r2 < r1 => Table r1 -> Table r2
-dropColumn2 = \t1. map prj t1
+dropColumnAlt : r2 < r1 => Table r1 -> Table r2
+dropColumnAlt = \t1. map prj t1
 
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
@@ -169,8 +169,8 @@ dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
 dropColumns = \t1 cs. map prj t1
 
 -- Rosi-like version is identical to singular dropColumn because the implicit argument can be one or more tables
-dropColumns2 : r2 < r1 => Table r1 -> Table r2
-dropColumns2 = \t1. map prj t1
+dropColumnsAlt : r2 < r1 => Table r1 -> Table r2
+dropColumnsAlt = dropColumnAlt
 
 -- ## Ordering
 

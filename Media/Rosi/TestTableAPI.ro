@@ -65,8 +65,8 @@ selectColumnsStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
 dropColumnStudents = dropColumn students 'age
 
 -- need type annotation to determine behavior
-dropColumn2Students : Table {'name := String, 'favorite_color := String}
-dropColumn2Students = dropColumn2 students
+dropColumnAltStudents : Table {'name := String, 'favorite_color := String}
+dropColumnAltStudents = dropColumnAlt students
 
 -- dropColumnStudentsExpected : Table {'name := String, 'favorite_color := String}
 dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
@@ -76,8 +76,8 @@ dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
 
 dropColumnsStudents = dropColumns students ('age := tt, 'favorite_color := tt)
 
-dropColumns2Students : Table {'name := String}
-dropColumns2Students = dropColumns2 students
+dropColumnsAltStudents : Table {'name := String}
+dropColumnsAltStudents = dropColumnsAlt students
 
 -- I get an interesting error when I remove this type annotation
 -- dropColumnsStudentsExpected : Table {'name := String}

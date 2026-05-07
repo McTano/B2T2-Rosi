@@ -21,7 +21,7 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 
 # Access Subcomponents
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
-# -e selectColumnsStudents,selectColumnsAltStudents,selectColumnsStudentsExpected,dropColumnStudents,dropColumn2Students,dropColumnStudentsExpected,dropColumnsStudents,dropColumns2Students,dropColumnsStudentsExpected
+# -e selectColumnsStudents,selectColumnsAltStudents,selectColumnsStudentsExpected,dropColumnStudents,dropColumnAltStudents,dropColumnStudentsExpected,dropColumnsStudents,dropColumnsAltStudents,dropColumnsStudentsExpected
 
 # ordering
 
