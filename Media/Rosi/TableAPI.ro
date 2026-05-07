@@ -45,12 +45,6 @@ values = id
 crossJoin : r1 + r2 ~ r3 => Table r1 -> Table r2 -> Table r3
 crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 
--- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
--- ##### Requires:
--- [x] `header(t3)` is equal to `concat(header(t1), removeAll(header(t2), cs))`
--- [x] for all `c` in `header(t1)`, `schema(t3)[c]` is equal to `schema(t1)[c]` [modulo use of Maybe]
--- [x] for all `c` in `removeAll(header(t2), cs))`, `schema(t3)[c]` is equal to `schema(t2)[c]` [modulo use of Maybe]
--- [ ] `nrows(t3)` is equal to `nrows(t1)`
 
 -- helpers for leftJoin:
 -- return r2 if it is equal to r1 according to eqs
@@ -64,6 +58,13 @@ leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybe (prj x))
                                         | 'Nothing: u -> nothingRecord)
                                             (find (match r1 eqs) t2)
 
+-- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- NOTE: Requires extra Eq argument
+-- ##### Requires:
+-- [x] `header(t3)` is equal to `concat(header(t1), removeAll(header(t2), cs))`
+-- [x] for all `c` in `header(t1)`, `schema(t3)[c]` is equal to `schema(t1)[c]` [modulo use of Maybe]
+-- [x] for all `c` in `removeAll(header(t2), cs))`, `schema(t3)[c]` is equal to `schema(t2)[c]` [modulo use of Maybe]
+-- [ ] `nrows(t3)` is equal to `nrows(t1)`
 leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
 leftJoin = \t1 t2 eqs. foldr
                               (\r1 a. cons (leftJoinSingle r1 eqs t2) a)
@@ -188,6 +189,7 @@ dropColumnsAlt = dropColumnAlt
 -- ## Aggregate
 
 -- ### `count :: t1:Table * c:ColName -> t2:Table`
+-- NOTE: Requires extra Eq argument
 countHelper : {l := v} < r => Table r -> #l -> Eq v -> Dict v Nat
 countHelper = \tb l eq. foldr (\e a. (inc a eq e.l)) emptyDict tb
 
@@ -264,7 +266,8 @@ renameColumn = \t1 l1 l2. transformAndRenameColumn t1 l1 l2 id
 
 -- ### `find :: t:Table * r:Row -> n:Error<Number>`
 -- NOTE: renamed to `findRow`
--- NOTE: I'm going to have this return a Maybe Nat for now.
+-- NOTE: Returns Nothing in the case of failure. The spec specifies it should return error("not found")
+-- but this isn't used anywhere else
 -- NOTE: Requires extra Eq argument
 -- [x] for all `c` in `header(r)`, `c` is in `header(t)`
 -- [x] for all `c` in `header(r)`, `schema(r)[c]` is equal to `schema(t)[c]`
@@ -289,8 +292,11 @@ update : Labels t1 ~ Labels t2, r2 < t2, t2 - r2 < t1 => Table t1 -> ((TableRow 
 update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
 
 -- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
--- TODO 
-
+-- Projects each `Row` of a `Table` into a new `Table`.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `n` is in `range(nrows(t1))`
+-- [x] `schema(t2)` is equal to `schema(r2)`
+-- [x] `nrows(t2)` is equal to `nrows(t1)`
 select : Table r1 -> (Pair (Pi r1) Nat -> TableRow r2) -> Table r2
 select = \t1 f. map f (enumerate t1)
 
