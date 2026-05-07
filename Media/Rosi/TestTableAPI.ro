@@ -1,7 +1,10 @@
 import Ro.Base
 import TableAPI, ExampleTables
 
+-- built-ins
+nrowsExample = nrows (cons tt (cons tt nil))
 
+-- Constructors
 type BracesRow : R[*]
 type BracesRow = {'has_braces := Bool }
 

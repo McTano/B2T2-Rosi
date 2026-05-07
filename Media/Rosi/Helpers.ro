@@ -28,7 +28,7 @@ filter = \ls f. foldr (\e a. if (f e)
                                         a) nil ls
 
 length : List a -> Nat
-length = foldr (\a e. succ e) 0
+length = foldr (\e a. succ a) 0
 
 type Dict : * -> * -> *
 type Dict = \k v . List (Pair k v)
