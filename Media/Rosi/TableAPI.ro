@@ -228,9 +228,14 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- ## Utilities
 
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- TODO 
+
 -- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
--- TODO 
+-- TODO
+-- Consumes a `Table`, a `ColName` representing a column name, and a transformation 
+-- function and produces a new `Table` where the transformation function has been 
+-- applied to all values in the named column.
+transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 =>  Table r1 -> #l -> (v1 -> v2) -> Table r2
+transformColumn = \t1 l f. map (\r1. (prj r1) ++ (l := f r1.l)) t1
 
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
