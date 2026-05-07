@@ -129,14 +129,17 @@ selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
 -- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
 -- PROBLEM: columns not ordered
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
-
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [x] `header(t2)` is equal to `cs` 
+-- [x] for all `c` in `header(t2)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
 selectColumns : cs < r1 => Table r1 -> Pi (Labels cs) -> Table cs
 selectColumns = \t1 ls. map prj t1
 
-
 -- more Rosi-like version
-selectColumns2 : r2 < r1 => Table r1 -> Table r2
-selectColumns2 = \t1. map prj t1
+selectColumnsAlt : r2 < r1 => Table r1 -> Table r2
+selectColumnsAlt = \t1. map prj t1
 
 -- ### `head :: t1:Table * n:Number -> t2:Table`
 -- ### `distinct :: t1:Table -> t2:Table`
