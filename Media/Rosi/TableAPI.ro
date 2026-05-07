@@ -76,13 +76,16 @@ leftJoin = \t1 t2 eqs. foldr
 nrows : Table r -> Nat
 nrows = length
 
-
 -- ### `ncols :: t:Table -> n:Number`
 ncols : Table r -> Nat
 ncols = length
 
 -- ### `header :: t:Table -> cs:Seq<ColName>`
--- PROBLEM: we can't convert labels to strings
+-- PROBLEM: we need to convert labels to terms or have this return a list of kind L
+-- PROBLEM: without changing the structure of tables, this can't work for empty table
+-- header : Fold r1 => Table r1 -> (List L)
+-- header : Fold r1 => Table r1 -> Pi (Labels r1)
+
 
 -- ## Access Subcomponents
 
