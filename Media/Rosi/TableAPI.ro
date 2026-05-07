@@ -106,16 +106,23 @@ getColumn = \t l. map (\r.  getValue r l) t
 
 -- ## SubTable
 -- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
--- [ ] for all `n` in `ns`, `n` is in `range(nrows(t1))` [returns Nothing if this fails]
+-- [ ] for all `n` in `ns`, `n` is in `range(nrows(t1))`
 -- [x] `schema(t2)` is equal to `schema(t1)`
--- [x] `nrows(t2)` is equal to `length(ns)`
+-- [ ] `nrows(t2)` is equal to `length(ns)`
 selectRows1 : Table r1 -> List Nat -> Maybe (Table r1)
 selectRows1 = \t1 ns. let matches = filterMaybe (map (nth t1) ns) in if (equal (nrows matches) (length ns))
                                                                      (Just matches)
                                                                      Nothing
 
 -- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`]
--- definable
+-- [ ] `length(bs)` is equal to `nrows(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(removeAll(bs, [false]))`
+selectRows2 : Table r1 -> List Bool -> Maybe (Table r1)
+selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
+                         (Just (filterMaybe (map (\p. if (p.'2) (Just p.'1) Nothing) (zip t1 bs))))
+                         Nothing
+
 
 -- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
 -- PROBLEM: columns not ordered
