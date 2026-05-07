@@ -23,6 +23,9 @@ find = fix (\find f.
                                       (Just xs.'1)
                                       (find f xs.'2))))
 
+findIndex : (a -> Bool) -> List a -> Maybe Nat
+findIndex = \f xs. maybe Nothing (\x. Just (x.'2)) (find (\p. f p.'1) (enumerate xs))
+
 filter : List a -> (a -> Bool) -> List a
 filter = \ls f. foldr (\e a. if (f e)
                                 (cons e a)

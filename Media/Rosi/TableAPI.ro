@@ -262,7 +262,11 @@ renameColumn : r + {l1 := v} ~ r1, r + {l2 := v} ~ r2 => Table r1 -> #l1 -> #l2 
 renameColumn = \t1 l1 l2. transformAndRenameColumn t1 l1 l2 id
 
 -- ### `find :: t:Table * r:Row -> n:Error<Number>`
--- TODO 
+-- NOTE: renamed to `findRow`
+-- NOTE: I'm going to have this return a Maybe Nat for now.
+findRow : Table r1 -> Eq (Pi r1) -> TableRow r1 -> Maybe Nat
+findRow = \t1 eqs r1. findIndex (eqs r1) t1
+
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
 -- TODO 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
