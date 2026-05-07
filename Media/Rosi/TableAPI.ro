@@ -56,13 +56,12 @@ crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 match : cs < r1, cs < r2 => Pi r1 -> (Eq (Pi cs)) -> Pi r2 -> Bool
 match = \r1 eqs r2. (eqs (prj r1) (prj r2))
 
+-- in success, map Just over the matching row,
+-- in failure, return nothing Record
 leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Pi (r1 + (Maybe* r2'))
--- TODO in success, map Just over the matching row,
---      in failure, return nothing Record
 leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybe (prj x))
                                         | 'Nothing: u -> nothingRecord)
                                             (find (match r1 eqs) t2)
-                                
 
 leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
 leftJoin = \t1 t2 eqs. foldr
@@ -107,7 +106,13 @@ getColumn = \t l. map (\r.  getValue r l) t
 
 -- ## SubTable
 -- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
--- definable
+-- [ ] for all `n` in `ns`, `n` is in `range(nrows(t1))` [returns Nothing if this fails]
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [x] `nrows(t2)` is equal to `length(ns)`
+selectRows1 : Table r1 -> List Nat -> Maybe (Table r1)
+selectRows1 = \t1 ns. let matches = filterMaybe (map (nth t1) ns) in if (equal (nrows matches) (length ns))
+                                                                     (Just matches)
+                                                                     Nothing
 
 -- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`]
 -- definable

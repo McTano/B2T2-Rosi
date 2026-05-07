@@ -27,6 +27,10 @@ filter = \ls f. foldr (\e a. if (f e)
                                 (cons e a)
                                         a) nil ls
 
+filterMaybe : List (Maybe a) -> List a
+filterMaybe = foldr (\e a. ( 'Just: x -> (cons x a)
+                           | 'Nothing: u -> a) e) nil 
+
 length : List a -> Nat
 length = foldr (\e a. succ a) 0
 
