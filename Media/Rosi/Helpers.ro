@@ -1,5 +1,6 @@
 import Ro.Base, Data.List, Data.Nat
 
+-- List utils
 zip : List a -> List b -> List (Pair a b)
 zip = fix (\zip.
               ( 'Nil: u -> const nil
@@ -34,6 +35,12 @@ filterMaybe = foldr (\e a. ( 'Just: x -> (cons x a)
 length : List a -> Nat
 length = foldr (\e a. succ a) 0
 
+takeN : List a -> Nat -> List a
+takeN = fix (\takeN xs. ( 'Zero: u -> nil
+                       | 'Succ: pr -> ( 'Nil: u -> nil
+                                     | 'Cons: ys -> cons ys.'1 (takeN ys.'2 pr)) xs))
+
+-- Dict
 type Dict : * -> * -> *
 type Dict = \k v . List (Pair k v)
 

@@ -142,8 +142,17 @@ selectColumnsAlt : r2 < r1 => Table r1 -> Table r2
 selectColumnsAlt = \t1. map prj t1
 
 -- ### `head :: t1:Table * n:Number -> t2:Table`
+-- PROBLEM: need negative numbers
+-- [ ] if `n` is non-negative then `n` is in `range(nrows(t1))`
+-- [ ] if `n` is negative then `- n` is in `range(nrows(t1))`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] if `n` is non-negative then `nrows(t2)` is equal to `n`
+-- [ ] if `n` is negative then `nrows(t2)` is equal to `nrows(t1) + n`
+head : Table r1 -> Nat -> Table r1
+head = \t1 n. takeN t1 n
+
 -- ### `distinct :: t1:Table -> t2:Table`
--- ### `dropColumn :: t1:Table * c:ColName -> t2:Table` 
+-- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
 
 dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
 dropColumn = \t1 l. map prj t1
