@@ -27,8 +27,8 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 
 
 # utilities
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
-# -e selectStudents,selectStudentsExpected
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e selectStudents,selectStudentsExpected,updateExample1,updateExample2,updateExample3
 
 # ExampleTables
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students

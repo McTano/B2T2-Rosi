@@ -101,11 +101,11 @@ selectStudentsExpected = cons ('id := 0, 'name := "Bob")
                               (cons ('id := 2, 'name := "Eve")
                                           nil))
 
+-- Aggregate
 studentsFavoriteColorsAsDict = countHelper studentsWithDupeColors 'favorite_color (~)
 
 getDictSuccess = getD studentsFavoriteColorsAsDict (~) "red"
 getDictFailure = getD studentsFavoriteColorsAsDict (~) "pink"
-
 
 studentsFavoriteColorsAsTable = count studentsWithDupeColors 'favorite_color (~)
 
@@ -114,6 +114,30 @@ studentsFavoriteColorsAsTableExpected = (cons ('value := "red", 'count := 2)
                                           (cons ('value := "green", 'count := 2)
                                                 (cons ('value := "blue", 'count := 2)
                                                       nil)))
+
+--Missing Values
+--Data Cleaning
+
+-- Utilities
+-- type annotation on f and at top level needed
+updateExample1 : StudentsTable
+updateExample1 = update students (\r1: TableRow StudentsRow. ('name := "Mud"))
+
+updateExample2 : Table {'name := String, 'age := String, 'favorite_color := String}
+updateExample2 = update students (\r1. ('age := r1.'name))
+
+-- An example this simple can be handled without an annotation.
+updateExample3 = update students id
+
+-- TODO: the following produces a haskell runtime error in the uvars function when the type declaration is omitted
+-- updateExample2 = update students (\r1: TableRow StudentsRow. ('age := r1.'name))
+-- where update is defined as:
+-- update : r2 < t2, t2 - r2 < t1 => Table t1 -> ((TableRow t1) -> (TableRow r2)) -> Table t2
+-- update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
+
+-- updateExample3 = sorry
+
+-- Printing
 
 type ExampleRow : R[*]
 type ExampleRow = {'Left := String, 'Right := String}

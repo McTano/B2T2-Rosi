@@ -277,21 +277,21 @@ findRow = \t1 eqs r1. findIndex (eqs r1) t1
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- TODO 
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
--- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r1 and r2
+-- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
 -- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f` to produce the values for those columns, once for each row.
 -- [x] `schema(r1)` is equal to `schema(t1)`
 -- [x] `header(t2)` is equal to `header(t1)` [NOTE: confirm this produces a type error]
--- [ ] for all `c` in `header(t2)`
+-- [x] for all `c` in `header(t2)`
 --   [x] if `c` in `header(r2)` then `schema(t2)[c]` is equal to `schema(r2)[c]` [schema(r2) and schema(t2) are necessarily identical]
---   [ ] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]` [NOTE: vacuously true under the naive interpretation]
+--   [x] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [x] `nrows(t2)` is equal to `nrows(t1)`
-update : Labels r1 ~ Labels r2 => Table r1 -> (TableRow r1 -> TableRow r2) -> Table r2
-update = \t1 f. map f t1
+update : Labels t1 ~ Labels t2, r2 < t2, t2 - r2 < t1 => Table t1 -> ((TableRow t1) -> (TableRow r2)) -> Table t2
+update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
 
 -- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
 -- TODO 
 
-select : Table r1 -> (Pair (TableRow r1) Nat -> TableRow r2) -> Table r2
+select : Table r1 -> (Pair (Pi r1) Nat -> TableRow r2) -> Table r2
 select = \t1 f. map f (enumerate t1)
 
 -- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
