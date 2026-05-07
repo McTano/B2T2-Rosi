@@ -22,6 +22,11 @@ find = fix (\find f.
                                       (Just xs.'1)
                                       (find f xs.'2))))
 
+filter : List a -> (a -> Bool) -> List a
+filter = \ls f. foldr (\e a. if (f e)
+                                (cons e a)
+                                        a) nil ls
+
 length : List a -> Nat
 length = foldr (\a e. succ e) 0
 
@@ -60,3 +65,6 @@ nothingRecordExample : Pi {'1 := Maybe Nat, '2 := Maybe String}
 nothingRecordExample = prj (nothingRecord [{'1 := Nat, '2 := String}])
 
 nothingRecordExampleExpected = ('1 := Nothing, '2 := Nothing)
+
+isJust : (Maybe a) -> Bool
+isJust = ('Just: x -> True | 'Nothing: u -> False)

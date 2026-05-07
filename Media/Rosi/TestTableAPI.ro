@@ -84,6 +84,12 @@ dropColumnsStudentsExpected = cons ('name := "Bob")
                                     (cons ('name := "Eve")
                                           nil))
 
+tfilterExample = tfilter studentsWithDupeColors (\r1. or (r1.'favorite_color ~"red") (r1.'name ~ "Alice"))
+tfilterExampleExpected = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
+                               (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
+                                     (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")
+                                           nil)))
+
 selectStudents : Table {'id := Nat, 'name := String}
 selectStudents = select students (\p. (prj p.'1) ++ ('id := p.'2))
 

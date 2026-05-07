@@ -135,6 +135,8 @@ dropColumn2 = \t1. map prj t1
 
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
+tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
+tfilter = filter
 
 dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
 dropColumns = \t1 cs. map prj t1

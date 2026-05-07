@@ -9,12 +9,15 @@ cd ~/Rosi
 
 
 # constructors
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e crossJoinExample,leftJoinExample1,leftJoinExample1Expected,leftJoinExample2,leftJoinExample2Expected
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+# -e crossJoinExample,leftJoinExample1,leftJoinExample1Expected,leftJoinExample2,leftJoinExample2Expected
 
 # properties
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
-# -e nrows,getRow,getValue,selectColumns,selectColumns2,dropColumn,dropColumn2
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI \
+-e nrows,getRow,getValue,selectColumns,selectColumns2,dropColumn,dropColumn2
+
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e tfilterExample,tfilterExampleExpected
 
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi
 
