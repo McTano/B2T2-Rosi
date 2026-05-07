@@ -66,6 +66,7 @@ setD = fix (\setD d eq k v.
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
 inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
 
+-- Maybe utils
 liftMaybe : Pi z -> Pi (Maybe * z)
 liftMaybe = \r. syn #Maybe (\l. Just r.l)
 

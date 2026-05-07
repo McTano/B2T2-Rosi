@@ -231,8 +231,15 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- TODO 
 -- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
 -- TODO 
+
+
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
--- TODO 
+-- PROBLEM: Typing multiple renames is hard
+-- can define for single column 
+renameColumn : r + {l1 := v} ~ r1, r + {l2 := v} ~ r2 => Table r1 -> #l1 -> #l2 -> Table r2
+renameColumn = \t1 l1 l2. map (\r1. (prj r1) ++ (l2 := r1.l1)) t1
+
+
 
 -- ### `find :: t:Table * r:Row -> n:Error<Number>`
 -- TODO 
