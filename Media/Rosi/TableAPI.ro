@@ -229,20 +229,24 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
 
+-- generalizes transformColumn and renameColumn
+transformAndRenameColumn : r + {l1 := v1} ~ r1, r + {l2 := v2} ~ r2 => Table r1 -> #l1 -> #l2 -> (v1 -> v2) -> Table r2
+transformAndRenameColumn = \t1 l1 l2 f. map (\r1. (prj r1) ++ (l2 := f r1.l1)) t1
+
 -- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
 -- TODO
 -- Consumes a `Table`, a `ColName` representing a column name, and a transformation 
 -- function and produces a new `Table` where the transformation function has been 
 -- applied to all values in the named column.
 transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 =>  Table r1 -> #l -> (v1 -> v2) -> Table r2
-transformColumn = \t1 l f. map (\r1. (prj r1) ++ (l := f r1.l)) t1
+transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
 -- PROBLEM: Typing multiple renames is hard
 -- can define for single column 
 renameColumn : r + {l1 := v} ~ r1, r + {l2 := v} ~ r2 => Table r1 -> #l1 -> #l2 -> Table r2
-renameColumn = \t1 l1 l2. map (\r1. (prj r1) ++ (l2 := r1.l1)) t1
+renameColumn = \t1 l1 l2. transformAndRenameColumn t1 l1 l2 id
 
 
 
