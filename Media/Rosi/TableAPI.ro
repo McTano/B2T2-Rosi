@@ -231,6 +231,21 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- ## Utilities
 
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- TODO
+-- When columns `cs` of table `t` have sequences, returns a `Table` where each element of each `c` 
+-- in `cs` is flattened, meaning the column corresponding to `c` becomes a longer column where the
+-- original entries are concatenated. If all sequences to be flattened are empty, the behavior is
+-- unspecified. Elements of row `i` of `t` in columns other than `cs` will be repeated according 
+-- to the length of `getValue(getRow(t1, i), c1)`. These lengths must therefore be the same for 
+-- each `c` in `cs`.
+-- [ ] `cs` has no duplicates
+-- [ ] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is `Seq<X>` for some sort `X`
+-- [ ] for all `i` in `range(nrows(t1))`, for all `c1` and `c2` in `cs`, `length(getValue(getRow(t1, i), c1))` is equal to `length(getValue(getRow(t1, i), c2))`
+-- [ ] `header(t2)` is equal to `header(t1)`
+-- [ ] for all `c` in `header(t2)`
+--   [ ] if `c` is in `cs` then `schema(t2)[c]` is equal to the element sort of `schema(t1)[c]`
+--   [ ] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
 
 -- generalizes transformColumn and renameColumn
 transformAndRenameColumn : r + {l1 := v1} ~ r1, r + {l2 := v2} ~ r2 => Table r1 -> #l1 -> #l2 -> (v1 -> v2) -> Table r2
@@ -281,7 +296,8 @@ findRow = \t1 eqs r1. findIndex (eqs r1) t1
 -- TODO 
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
--- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f` to produce the values for those columns, once for each row.
+-- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f`
+--  to produce the values for those columns, once for each row.
 -- [x] `schema(r1)` is equal to `schema(t1)`
 -- [x] `header(t2)` is equal to `header(t1)` [NOTE: confirm this produces a type error]
 -- [x] for all `c` in `header(t2)`
@@ -300,8 +316,22 @@ update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
 select : Table r1 -> (Pair (Pi r1) Nat -> TableRow r2) -> Table r2
 select = \t1 f. map f (enumerate t1)
 
+
+
 -- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
--- TODO
+-- Projects each row of a table to a new table, flattens the resulting tables into one table, and 
+-- invokes a result selector function on each row therein. The index of each source row is used
+-- in the intermediate projected form of that row.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `n` is in `range(nrows(t1))`
+-- [x] `schema(r2)` is equal to `schema(t1)`
+-- [x] `schema(r3)` is equal to `schema(t2)`
+-- [x] `schema(r4)` is equal to `schema(t3)`
+selectMany : Table r1 -> (Pair (TableRow r1) Nat -> Table r2) -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
+-- selectMany = \t1 project result. map (\r1. (map result (zip r1 (map project (enumerate t1))))) t1
+-- selectMany = \t1 project result. flattenList (map (\r1. result (zip r1 (map project (enumerate t1)))) t1)
+selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.'1 (project p)) (enumerate t1))))
+
 -- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
 -- TODO
 -- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`

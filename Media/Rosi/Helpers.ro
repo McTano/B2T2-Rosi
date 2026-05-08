@@ -8,6 +8,10 @@ zip = fix (\zip.
                     (  'Nil: u -> nil
                     | 'Cons: ys -> cons (pair xs.'1 ys.'1) (zip xs.'2 ys.'2))))
 
+-- equivalent to zip with a stream that repeats the first argument
+zipRepeat : a -> List b -> List (Pair a b)
+zipRepeat = \a. map (\b. pair a b)
+
 enumerateHelper : Nat -> List a -> List (Pair a Nat)
 enumerateHelper = fix (\enumerateHelper n.
                                     ( 'Nil: u -> nil
@@ -42,6 +46,9 @@ takeN : List a -> Nat -> List a
 takeN = fix (\takeN xs. ( 'Zero: u -> nil
                        | 'Succ: pr -> ( 'Nil: u -> nil
                                      | 'Cons: ys -> cons ys.'1 (takeN ys.'2 pr)) xs))
+
+flattenList : List (List a) -> List a
+flattenList = foldr append nil
 
 -- Dict
 type Dict : * -> * -> *
