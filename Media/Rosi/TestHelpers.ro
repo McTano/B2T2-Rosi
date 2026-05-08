@@ -26,11 +26,11 @@ countDict = (cons (pair 3 11)
                         (cons (pair 7 17)
                               nil)))
 
--- inc1 = inc countDict equal 3 -- 11
--- inc2 = inc inc1 equal 5 -- 14
--- inc3 = inc inc2 equal 7 -- 17
--- incMissing = inc inc3 equal 19
--- incEmpty = inc emptyDict (const (const False)) "Fresh key"
+inc1 = inc countDict equal 3 -- 11
+inc2 = inc inc1 equal 5 -- 14
+inc3 = inc inc2 equal 7 -- 17
+incMissing = inc inc3 equal 19
+incEmpty = inc emptyDict (const (const False)) "Fresh key"
 
 
 -- splitExample = split ('1 := Nothing, '2 := 12, '3 := Just "Hello")
