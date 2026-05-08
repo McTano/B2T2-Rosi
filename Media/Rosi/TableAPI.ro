@@ -334,5 +334,14 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 
 -- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
 -- TODO
+
 -- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`
 -- TODO
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `schema(r2)` is equal to `schema(t2)`
+-- [x] `schema(r3)` is equal to `schema(t1)`
+-- [x] `schema(r4)` is equal to `schema(t2)`
+-- [x] `schema(t3)` is equal to `schema(r5)`
+join : Table r1 -> Table r2 -> (TableRow r1 -> k) -> (TableRow r2 -> k) -> Eq k -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
+join = \t1 t2 getKey1 getKey2 eq combine.
+            selectMany t1 (\p. let r1 = p.'1 in (let k = getKey1 r1 in (tfilter t2 (\r2. eq (getKey2 r2) k)))) combine
