@@ -82,10 +82,12 @@ ncols : Table r -> Nat
 ncols = length
 
 -- ### `header :: t:Table -> cs:Seq<ColName>`
--- PROBLEM: we need to convert labels to terms or have this return a list of kind L
 -- Also, without changing the structure of tables, this can't work for empty table
 -- header : Fold r1 => Table r1 -> (List L)
--- header : Fold r1 => Table r1 -> Pi (Labels r1)
+-- NOTE: We've been representing Seq<ColName> as Pi (Labels cs), so this gives us what we need for
+-- functions that take that input, but doesn't let us treat them as values (I think)
+header : Table r1 -> Pi (Labels r1)
+header = \t1. labelsP
 
 
 -- ## Access Subcomponents

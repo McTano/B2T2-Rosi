@@ -90,3 +90,14 @@ nothingRecordExampleExpected = ('1 := Nothing, '2 := Nothing)
 
 isJust : (Maybe a) -> Bool
 isJust = ('Just: x -> True | 'Nothing: u -> False)
+
+-- Record utils
+
+labelsP : Pi (Labels r)
+labelsP = syn #(Const Unit) (const tt)
+
+labelsS : Sigma r -> Sigma (Labels r)
+labelsS = \r. ana #(\t. t) (\l v. inj (l := tt)) r
+
+labelsL : List (Pi r) -> Pi (Labels r)
+labelsL = const labelsP
