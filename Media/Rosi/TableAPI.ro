@@ -182,11 +182,15 @@ dropColumnsAlt = dropColumnAlt
 
 
 -- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
--- PROBLEM: define sorting, Order, etc.
+-- TODO
+-- DEPENDS: sorting
+
 -- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- PROBLEM: define sorting, Order, etc.
+-- TODO
+-- DEPENDS: sorting
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
--- PROBLEM: define sorting, Order, etc.
+-- TODO
+-- DEPENDS: sorting
 
 -- ## Aggregate
 
@@ -280,7 +284,7 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 -- [ ] for all `c` in `header(t2)`
 --   [1] if `c` is in `cs` then `schema(t2)[c]` is equal to the element sort of `schema(t1)[c]`
 --   [ ] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
-flatten : (List* r2') + r' ~ r1, r2' + r' ~ r2 => Table r1 -> Pi (Labels r2') -> Table r2
+flatten : (List* cs) + r' ~ r1, cs + r' ~ r2 => Table r1 -> Pi (Labels cs) -> Table r2
 flatten = \t1 cs.
             selectMany
                 t1
@@ -327,6 +331,7 @@ transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
 -- PROBLEM: Typing multiple renames is hard because we need to somehow map labels to labels
+-- NOTE: 
 --  [x] `c1i` is in `header(t1)` for all `i`
 --  [ ] `[c11 ... c1n]` has no duplicates
 --  [ ] `concat(removeAll(header(t1), [c11 ... c1n]), [c21 ... c2n])` has no duplicates
