@@ -1,4 +1,4 @@
-import Ro.Base, Data.List, Data.Nat
+import Ro.Base, Data.List, Data.Nat, EncodeTables
 
 --------------------------------------------------------------------------------
 -- List utils
@@ -165,5 +165,29 @@ nonEmptyList = \x. 'Cons: (pair x nil)
 nonEmpty : List a -> Maybe (NonEmptyList a)
 nonEmpty = ('Cons: x -> Just ('Cons: x) | 'Nil: u -> Nothing)
 
-nonEmptyPi : Pi (List* cs) -> (Pi (Maybe* (NonEmptyList* cs)))
+nonEmptyPi : Pi (List* cs) -> Pi (Maybe* (NonEmptyList* cs))
 nonEmptyPi = \cs. syn #(\t. Maybe (NonEmptyList t)) (\l. nonEmpty cs.l)
+
+headNonEmpty : NonEmptyList a -> a
+headNonEmpty = 'Cons: x -> x.'1
+
+-- helpers for flatten
+
+-- helpers for flatten
+getListColumns : (List* cs) < r => Pi (Labels cs) -> TableRow r -> TableRow (List* cs)
+getListColumns = \cs r. prj r
+
+columnsHead : Pi (NonEmptyList* cs) -> Pi cs
+columnsHead = \r. syn #Id (\l. headNonEmpty r.l)
+
+columnsTail : Pi (List* cs) -> Pi (List* cs)
+columnsTail = \d. syn #List (\l. tail d.l)
+
+consColumns : Pi cs -> Pi (List* cs) -> Pi (List* cs)
+consColumns = \d ds. syn #List (\l. cons d.l ds.l)
+
+transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
+transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
+                                                             (transpose (columnsTail cs)))
+                                        |  'Nothing: u -> nil)
+                                                         ((unliftMaybePi . nonEmptyPi) cs))

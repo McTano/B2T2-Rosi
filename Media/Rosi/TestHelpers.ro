@@ -55,3 +55,20 @@ nonEmptyPiExample1 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := (cons
 
 nonEmptyPiExample2 : Pi {'l1 := Maybe (NonEmptyList Nat), ('l2 := Maybe (NonEmptyList Nat))}
 nonEmptyPiExample2 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := nil))
+
+
+showCs : Pi {'l1 := Nat, 'l2 := Nat} -> String
+showCs = showP ('names := ('l1 := "l1", 'l2 := "l2"), 'shows := ('l1 := showNat, 'l2 := showNat))
+
+showCsL : Table {'l1 := Nat, 'l2 := Nat} -> String
+showCsL = showList showCs
+
+transposeColumnsExample1' : Table {'l1 := Nat, 'l2 := Nat}
+transposeColumnsExample1' = (transposeColumns ('l1 := (cons 1 (cons 2 nil)), 'l2 := (cons 3 (cons 6 (cons 9 nil)))))
+
+transposeColumnsExample2' : Table {'l1 := Nat, 'l2 := Nat}
+transposeColumnsExample2' = (transposeColumns ('l1 := (cons 1 (cons 2 nil)), 'l2 := nil))
+
+transposeColumnsExample1 = showCsL transposeColumnsExample1'
+transposeColumnsExample2 = showCsL transposeColumnsExample2'
+

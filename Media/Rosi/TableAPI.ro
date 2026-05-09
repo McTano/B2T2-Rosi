@@ -282,24 +282,6 @@ selectMany : Table r1 -> (Pair (TableRow r1) Nat -> Table r2) -> (Pair (TableRow
 -- selectMany = \t1 project result. flattenList (map (\r1. result (zip r1 (map project (enumerate t1)))) t1)
 selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.'1 (project p)) (enumerate t1))))
 
--- helpers for flatten
-getListColumns : (List* cs) < r => Pi (Labels cs) -> TableRow r -> TableRow (List* cs)
-getListColumns = \cs r. prj r
-
-columnsHead : Pi (List* cs) -> Pi (Maybe* cs)
-columnsHead = \r. syn #Maybe (\l. head r.l)
-
-columnsTail : Pi (List* cs) -> Pi (List* cs)
-columnsTail = \d. syn #List (\l. tail d.l)
-
-consColumns : Pi cs -> Pi (List* cs) -> Pi (List* cs)
-consColumns = \d ds. syn #List (\l. cons d.l ds.l)
-
-transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
-transposeColumns = fix (\transpose cs. if (allNonEmpty cs)
-                                          (cons (fromJust_DANGER_ (unliftMaybePi (columnsHead cs)))
-                                               (transpose (columnsTail cs)))
-                                           nil)
 
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- When columns `cs` of table `t` have sequences, returns a `Table` where each element of each `c` 
