@@ -13,5 +13,5 @@ It seems like there are cases where we would like to be able to store one or mor
 - However, is this necessary?
   - It seems like it would be helpful to have a list of labels that appear in a row, but I don't yet have a clear example where we definitely need this.
   - Seems related to converting between strings and labels, but not sure if there is a dependency.
-  - I've flagged some of the functions in the TableAPI spec as possibly needing one or the other.
+  - I've flagged some of the functions in the TableAPI spec as possibly needing one or the other. Specifically, `pivotLonger`, `pivotWider`, and `renameColumns`.
   - The main question is whether we can accomplish all of this using the existing tools, like `Labels`, `ana`, `syn`, etc.

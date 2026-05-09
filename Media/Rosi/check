@@ -2,10 +2,10 @@
 
 cd ~/Rosi
 
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi Helpers -e zip,length,Dict,eqStr,expectTrue1,expectTrue2,expectFalse
 
 
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi Helpers
 
 
 # constructors
@@ -14,8 +14,8 @@ cd ~/Rosi
 
 # properties
 
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e nrowsExample,tfilterExample,tfilterExampleExpected
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+# -e nrowsExample,tfilterExample,tfilterExampleExpected
 
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi
 
@@ -27,15 +27,18 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
 
 
 # utilities
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e selectStudents,selectStudentsExpected,updateExample1,updateExample2,updateExample3
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+# -e selectStudents,selectStudentsExpected,updateExample1,updateExample2,updateExample3
 
 # ExampleTables
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi ExampleTables -e students
 
 # Helpers
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
--e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty,nothingRecordExample,nothingRecordExampleExpected,eqPExample,nothingRecordPrj
+
+
+
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
+# -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty,nothingRecordExample,nothingRecordExampleExpected,eqPExample,nothingRecordPrj
 
 # aggregate
 # cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
@@ -47,4 +50,3 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
 # -e studentsWithDupeColors,studentsFavoriteColorsAsDict,getDictSuccess,getDictFailure,studentsFavoriteColorsAsTable
 #  -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty
 # -e concreteVariant,concreteVariantInList,labeledWithVar,labeledWithVarViaCon,labeledWithShorthand,labeledWithShorthandVar
-
