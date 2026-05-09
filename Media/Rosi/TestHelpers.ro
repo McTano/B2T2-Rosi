@@ -43,3 +43,15 @@ incEmpty = inc emptyDict (const (const False)) "Fresh key"
 
 canInjNonEmptyListToList : List Nat
 canInjNonEmptyListToList = inj goodList
+
+nonEmptyExample1 : Maybe (NonEmptyList Nat)
+nonEmptyExample1 = nonEmpty (cons 1 (cons 2 nil))
+
+nonEmptyExample2 : Maybe (NonEmptyList Nat)
+nonEmptyExample2 = nonEmpty nil
+
+nonEmptyPiExample1 : Pi {'l1 := Maybe (NonEmptyList Nat), ('l2 := Maybe (NonEmptyList Nat))}
+nonEmptyPiExample1 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := (cons 3 (cons 6 (cons 9 nil)))))
+
+nonEmptyPiExample2 : Pi {'l1 := Maybe (NonEmptyList Nat), ('l2 := Maybe (NonEmptyList Nat))}
+nonEmptyPiExample2 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := nil))

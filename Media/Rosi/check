@@ -35,10 +35,12 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi Helpers
 
 # Helpers
 
-
-
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
 # -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty,nothingRecordExample,nothingRecordExampleExpected,eqPExample,nothingRecordPrj
+
+# nonempty list examples
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
+-e nonEmptyExample1,nonEmptyExample2,nonEmptyPiExample1,nonEmptyPiExample2
 
 # aggregate
 # cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \

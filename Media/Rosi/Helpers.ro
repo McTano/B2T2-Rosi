@@ -156,9 +156,6 @@ baseList = cons 1 nil
 goodList : NonEmptyList Nat
 goodList = ('Cons := pair 1 nil)
 
--- cons : a -> List a -> List a
--- cons = \hd tl. 'Cons: (pair hd tl)
-
 consNonEmpty : a -> List a -> NonEmptyList a
 consNonEmpty = \hd tl. 'Cons: (pair hd tl)
 
@@ -167,3 +164,6 @@ nonEmptyList = \x. 'Cons: (pair x nil)
 
 nonEmpty : List a -> Maybe (NonEmptyList a)
 nonEmpty = ('Cons: x -> Just ('Cons: x) | 'Nil: u -> Nothing)
+
+nonEmptyPi : Pi (List* cs) -> (Pi (Maybe* (NonEmptyList* cs)))
+nonEmptyPi = \cs. syn #(\t. Maybe (NonEmptyList t)) (\l. nonEmpty cs.l)
