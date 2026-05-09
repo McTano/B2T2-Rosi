@@ -21,9 +21,9 @@ type GradesRow = {'name := String, 'age := Nat, 'quiz1 := Nat, 'quiz2 := Nat, 'm
 
 grades : Table GradesRow
 grades = cons ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
-                                (cons ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
-                                      (cons ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
-                                            nil))
+              (cons ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
+                    (cons ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+                          nil))
 
 
 leftJoinExample1 = leftJoin students grades (eqP ('name := (~), 'age := equal))
