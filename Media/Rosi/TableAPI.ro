@@ -279,9 +279,18 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
 pivotWider : forall r rk rr r': R[*], lk lv: L, t: *.
   {lk := Sigma (Labels rk)} + {lv := t} + rr ~ r,
-  rr + ((Const (Maybe t))* rk) ~ r'
-          => Table r -> #lk -> #lv -> Pi (Eq rr) -> Table r'
-pivotWider = \t lk lv eqs. emptyTable
+  rr + ((Const (Option t))* rk) ~ r'
+          => Table r -> #lk -> #lv -> Pi (Eq r) -> Table r'
+pivotWider = \t lk lv eqs.
+                -- TODO
+                -- get all the rows which are distinct except for the values at lk and lv.
+                -- for each distinct row:
+                  -- select all rows equal to that row
+                  -- build row over rk, with value set to the value in the row matching that label, if it exists.
+                    -- to build this row, could fold over the list with an accumulator Pi (Const(Option t))* rk
+                    -- for each row, overwrite the value in the corresponding column according to the case of Sigma rk
+                  -- concatenate this new row with the original row.
+                emptyTable
 
 -- ## Utilities
 
