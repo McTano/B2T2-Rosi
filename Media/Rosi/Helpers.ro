@@ -8,6 +8,9 @@ zip = fix (\zip.
                     (  'Nil: u -> nil
                     | 'Cons: ys -> cons (pair xs.'1 ys.'1) (zip xs.'2 ys.'2))))
 
+unzip : List (Pair a b) -> Pair (List a) (List b)
+unzip = foldr (\p xs_ys. (pair (cons p.'1 xs_ys.'1) (cons p.'2 xs_ys.'2))) (pair nil nil)
+
 -- equivalent to zip with a stream that repeats the first argument
 zipRepeat : a -> List b -> List (Pair a b)
 zipRepeat = \a. map (\b. pair a b)
@@ -30,8 +33,8 @@ find = fix (\find f.
 findIndex : (a -> Bool) -> List a -> Maybe Nat
 findIndex = \f xs. maybe Nothing (\x. Just (x.'2)) (find (\p. f p.'1) (enumerate xs))
 
-filter : List a -> (a -> Bool) -> List a
-filter = \ls f. foldr (\e a. if (f e)
+filter : (a -> Bool) -> List a -> List a
+filter = \f ls. foldr (\e a. if (f e)
                                 (cons e a)
                                         a) nil ls
 
@@ -49,6 +52,9 @@ takeN = fix (\takeN xs. ( 'Zero: u -> nil
 
 flattenList : List (List a) -> List a
 flattenList = foldr append nil
+
+all : (a -> Bool) -> List a -> Bool
+all = \f xs. foldr and True (map f xs) 
 
 -- Dict
 type Dict : * -> * -> *

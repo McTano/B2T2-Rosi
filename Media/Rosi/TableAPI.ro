@@ -156,9 +156,17 @@ selectColumnsAlt = \t1. map prj t1
 tableHead : Table r1 -> Nat -> Table r1
 tableHead = \t1 n. takeN t1 n
 
+-- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
+tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
+tfilter = \t1 f. filter f t1
+
 -- ### `distinct :: t1:Table -> t2:Table`
 -- Retains only unique/distinct rows from an input `Table`.
--- TODO 
+-- NOTE: Requires extra Eq argument
+distinct : Table r1 -> Eq (Pi r1) -> Table r1
+distinct = \t1 eq. let ps = (enumerate t1) in (unzip (tfilter ps
+                                                             (\p1. all (\p2. or (equal p1.'2 p2.'2)
+                                                                                (not (eq p1.'1 p2.'1))) ps))).'1
 
 -- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
 dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
@@ -167,11 +175,9 @@ dropColumn = \t1 l. map prj t1
 dropColumnAlt : r2 < r1 => Table r1 -> Table r2
 dropColumnAlt = \t1. map prj t1
 
--- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
-tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
-tfilter = filter
 
+
+-- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
 dropColumns = \t1 cs. map prj t1
 
@@ -306,14 +312,11 @@ unliftMaybePi = \r. if (isJusts r)
 consColumns : Pi cs -> Pi (List* cs) -> Pi (List* cs)
 consColumns = \d ds. syn #List (\l. cons d.l ds.l)
 
--- TODO figure out how to do this.
 transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
 transposeColumns = fix (\transpose cs. if (allNonEmpty cs)
                                           (cons (fromJust (unliftMaybePi (columnsHead cs)))
                                                (transpose (columnsTail cs)))
                                            nil)
-
-
 
 -- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- When columns `cs` of table `t` have sequences, returns a `Table` where each element of each `c` 
@@ -354,7 +357,7 @@ transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
 -- PROBLEM: Typing multiple renames is hard because we need to somehow map labels to labels
--- NOTE: 
+-- NOTE:
 --  [x] `c1i` is in `header(t1)` for all `i`
 --  [ ] `[c11 ... c1n]` has no duplicates
 --  [ ] `concat(removeAll(header(t1), [c11 ... c1n]), [c21 ... c2n])` has no duplicates
