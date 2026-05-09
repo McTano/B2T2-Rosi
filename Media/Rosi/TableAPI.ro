@@ -253,6 +253,7 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
 -- PROBLEM: requires t2 to have a column containing labels (column names) as values (e.g. String or general label type)
+-- DEPENDS: label -> string
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
@@ -267,8 +268,8 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- }
 
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
--- PROBLEM: requires converting strings to labels
 -- The inverse of `pivotLonger`.
+-- NOTE: based on the example in the Toohey 2026.
 -- [ ] `c1` is in `header(t1)`
 -- [ ] `c2` is in `header(t1)`
 -- [ ] `schema(t1)[c1]` is `ColName`
@@ -276,6 +277,11 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- [ ] `header(t2)` is equal to `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))`
 -- [ ] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
+pivotWider : forall r rk rr r': R[*], lk lv: L, t: *.
+  {lk := Sigma (Labels rk)} + {lv := t} + rr ~ r,
+  rr + ((Const (Maybe t))* rk) ~ r'
+          => Table r -> #lk -> #lv -> Pi (Eq rr) -> Table r'
+pivotWider = \t lk lv eqs. emptyTable
 
 -- ## Utilities
 
