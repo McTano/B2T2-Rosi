@@ -292,29 +292,12 @@ columnsHead = \r. syn #Maybe (\l. head r.l)
 columnsTail : Pi (List* cs) -> Pi (List* cs)
 columnsTail = \d. syn #List (\l. tail d.l)
 
-nonEmpty : List a -> Bool
-nonEmpty = 'Cons: x -> True | 'Nil: u -> False
-
-allNonEmpty : Fold cs => Pi (List* cs) -> Bool
-allNonEmpty = fold #List (const nonEmpty) and True
-
-isJusts : Fold z => Pi (Maybe* z) -> Bool
-isJusts = fold #Maybe (const isJust) and True
-
-fromJust : Maybe a -> a
-fromJust = fromMaybe (fix id)
-
-unliftMaybePi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
-unliftMaybePi = \r. if (isJusts r)
-                 (Just (syn #Id (\k. fromJust r.k)))
-                 Nothing
-
 consColumns : Pi cs -> Pi (List* cs) -> Pi (List* cs)
 consColumns = \d ds. syn #List (\l. cons d.l ds.l)
 
 transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
 transposeColumns = fix (\transpose cs. if (allNonEmpty cs)
-                                          (cons (fromJust (unliftMaybePi (columnsHead cs)))
+                                          (cons (fromJust_DANGER_ (unliftMaybePi (columnsHead cs)))
                                                (transpose (columnsTail cs)))
                                            nil)
 

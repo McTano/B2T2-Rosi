@@ -1,6 +1,9 @@
 import Ro.Base, Data.List, Data.Nat
 
+--------------------------------------------------------------------------------
 -- List utils
+--------------------------------------------------------------------------------
+
 zip : List a -> List b -> List (Pair a b)
 zip = fix (\zip.
               ( 'Nil: u -> const nil
@@ -56,7 +59,10 @@ flattenList = foldr append nil
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
 
+--------------------------------------------------------------------------------
 -- Dict
+--------------------------------------------------------------------------------
+
 type Dict : * -> * -> *
 type Dict = \k v . List (Pair k v)
 
@@ -82,7 +88,10 @@ setD = fix (\setD d eq k v.
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
 inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
 
+--------------------------------------------------------------------------------
 -- Maybe utils
+--------------------------------------------------------------------------------
+
 liftMaybe : Pi z -> Pi (Maybe * z)
 liftMaybe = \r. syn #Maybe (\l. Just r.l)
 
@@ -97,7 +106,29 @@ nothingRecordExampleExpected = ('1 := Nothing, '2 := Nothing)
 isJust : (Maybe a) -> Bool
 isJust = ('Just: x -> True | 'Nothing: u -> False)
 
+isJusts : Fold z => Pi (Maybe* z) -> Bool
+isJusts = fold #Maybe (const isJust) and True
+
+isNonEmpty : List a -> Bool
+isNonEmpty = 'Cons: x -> True | 'Nil: u -> False
+
+allNonEmpty : Fold cs => Pi (List* cs) -> Bool
+allNonEmpty = fold #List (const isNonEmpty) and True
+
+-- WARNING: Non-Terminating if a is Nothing
+fromJust_DANGER_ : Maybe a -> a
+fromJust_DANGER_ = fromMaybe (fix id)
+
+unliftMaybePi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
+unliftMaybePi = \r. if (isJusts r)
+                 (Just (syn #Id (\k. fromJust_DANGER_ r.k)))
+                 Nothing
+
+            
+
+--------------------------------------------------------------------------------
 -- Record utils
+--------------------------------------------------------------------------------
 
 labelsP : Pi (Labels r)
 labelsP = syn #(Const Unit) (const tt)
@@ -107,3 +138,32 @@ labelsS = \r. ana #(\t. t) (\l v. inj (l := tt)) r
 
 labelsL : List (Pi r) -> Pi (Labels r)
 labelsL = const labelsP
+
+--------------------------------------------------------------------------------
+-- Non-empty List type
+--------------------------------------------------------------------------------
+
+type NonEmptyList : * -> *
+-- should this have a sigma between tail is plain List and tail is NonEmptyList?
+type NonEmptyList = \a. Sigma { 'Cons := Pair a (List a) }
+
+-- type NonEmptyList : * -> *
+-- type NonEmptyList = \a. Sigma {'Cons: \l. Pair a l}
+
+baseList : List Nat
+baseList = cons 1 nil
+
+goodList : NonEmptyList Nat
+goodList = ('Cons := pair 1 nil)
+
+-- cons : a -> List a -> List a
+-- cons = \hd tl. 'Cons: (pair hd tl)
+
+consNonEmpty : a -> List a -> NonEmptyList a
+consNonEmpty = \hd tl. 'Cons: (pair hd tl)
+
+nonEmptyList : a -> NonEmptyList a
+nonEmptyList = \x. 'Cons: (pair x nil)
+
+nonEmpty : List a -> Maybe (NonEmptyList a)
+nonEmpty = ('Cons: x -> Just ('Cons: x) | 'Nil: u -> Nothing)

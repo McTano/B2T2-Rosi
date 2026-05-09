@@ -35,3 +35,11 @@ incEmpty = inc emptyDict (const (const False)) "Fresh key"
 
 -- splitExample = split ('1 := Nothing, '2 := 12, '3 := Just "Hello")
 -- splitExampleExpected = ('1 := ('1 := Nothing, '3 := (Just "Hello")), '2 := ('2 := 12))
+
+
+-- -- should fail because we don't know if list is empty
+-- cantInjListToNonEmptyList : NonEmptyList Nat
+-- cantInjListToNonEmptyList = inj baseList
+
+canInjNonEmptyListToList : List Nat
+canInjNonEmptyListToList = inj goodList
