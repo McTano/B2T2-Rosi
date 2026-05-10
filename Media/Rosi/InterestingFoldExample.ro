@@ -1,0 +1,23 @@
+
+
+-- this version doesn't work because cs is free, (implicitly `forall cs`) so {l := x} must be true for arbitrary cs.
+-- we need to bind cs to make the predicate mean what we want.
+-- foo : {l := x} < cs => #l -> x -> Nat
+-- foo = \l x. 1
+
+-- -- The use of foo gives this error:
+-- -- The predicate
+-- -- {l := u} < cs#38@3
+-- -- is not entailed by
+-- -- {l := u} < cs, Fold cs
+-- bar : Fold cs => Pi cs -> Nat
+-- bar = \cs. fold #Id foo add 0 cs
+
+-- The solution is to pass the `cs` record into the helper function so that the
+-- predicate refers to the specific given row `cs`
+foo : forall cs. {l := x} < cs => Pi cs -> #l -> x -> Nat
+foo = \cs l x. 1
+
+bar : Fold cs => Pi cs -> Nat
+bar = \cs. fold #Id (foo cs) add 0 cs
+
