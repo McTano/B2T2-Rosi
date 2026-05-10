@@ -21,3 +21,27 @@ foo = \cs l x. 1
 bar : Fold cs => Pi cs -> Nat
 bar = \cs. fold #Id (foo cs) add 0 cs
 
+
+-- this still doesn't work, though.
+-- foo : forall cs. {l := Unit} < (Labels cs) => Pi (Labels cs) -> #l -> x -> Nat
+-- foo = \cs l x. 1
+
+-- not sure if the fold type argument should be #Id or #(Const Unit), but either way it doesn't work
+-- bar : Fold cs => Pi (Labels cs) -> Nat
+-- bar = \cs. fold #(Const Unit) (foo cs) add 0 cs
+
+-- Don't have a clean example for this, but it's possible to get the following errors:
+  -- The predicate      {l := Unit} < (\y : *. Unit) cs
+  -- is not entailed by {l := T} < (\y : *. T) cs
+
+-- In this specific case it should be entailed.
+-- maybe we could have some stronger inference rule here?
+
+-- Labels is supposed to let us make statements like "The keys in A are a subset of the keys in B"
+
+
+
+-- In general,  we should be able to say that:
+--   1. (Const A)* r ~ ((Const A)* (Const B)* r)
+--   2. If `{l := A} < r` then  `{l := B} <  (Const B)* r`
+-- maybe we could have a stronger rule about `Const`
