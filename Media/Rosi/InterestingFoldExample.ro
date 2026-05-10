@@ -45,3 +45,11 @@ bar = \cs. fold #Id (foo cs) add 0 cs
 --   1. (Const A)* r ~ ((Const A)* (Const B)* r)
 --   2. If `{l := A} < r` then  `{l := B} <  (Const B)* r`
 -- maybe we could have a stronger rule about `Const`
+
+-- Here's another one:
+coerceVs : cs ~ cs, cs < (Const T)* cs => Sigma cs -> T
+coerceVs = /\T:*. \cs. ana #(Const T) (\l x. x) (inj cs)
+
+-- fails with: 
+-- The predicate      cs < (\y : *. T) z#15@2
+-- is not entailed by cs < (\y : *. T) cs
