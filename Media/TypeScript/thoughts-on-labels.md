@@ -15,3 +15,7 @@ It seems like there are cases where we would like to be able to store one or mor
   - Seems related to converting between strings and labels, but not sure if there is a dependency.
   - I've flagged some of the functions in the TableAPI spec as possibly needing one or the other. Specifically, `pivotLonger`, `pivotWider`, and `renameColumns`.
   - The main question is whether we can accomplish all of this using the existing tools, like `Labels`, `ana`, `syn`, etc.
+
+  ## Nevermind
+  
+  As the `pivotWider` and `pivotLonger` examples demonstrate, we can represent the labels of r as just `Sigma (Labels r)`. Then our equivalent to `R[k]` can be defined with `ana`, I think.
