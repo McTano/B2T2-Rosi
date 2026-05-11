@@ -53,3 +53,9 @@ coerceVs = /\T:*. \cs. ana #(Const T) (\l x. x) (inj cs)
 -- fails with: 
 -- The predicate      cs < (\y : *. T) z#15@2
 -- is not entailed by cs < (\y : *. T) cs
+
+
+-- There was somewhere I was able to use this, which could indicate
+--  somewhere where inj isn't able to infer enough, but I don't have the example.
+coerceLabel : {l := A} < r => #l -> Sigma (Labels r)
+coerceLabel = \l. inj (l := tt)

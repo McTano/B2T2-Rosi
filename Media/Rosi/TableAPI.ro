@@ -379,46 +379,20 @@ join = \t1 t2 getKey1 getKey2 eq combine.
 
 -- ## Data Cleaning
 
+-- helpers for pivotLonger
+pcHelper : {l := T} < r => Pi (Labels cs) -> #l -> T -> Table {'key := Sigma (Labels r), 'value := Sigma r}
+pcHelper = \cs l x. cons ('key := inj (l := tt), 'value := inj (l := x)) emptyTable
 
-
--- selectMany : Table r1 -> (Pair (TableRow r1) Nat -> Table r2) -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
-
--- {l := Unit} < (\y : *. Unit) cs => {l := t} < cs => {l := t} < r1 => (\y : *. t) cs < r1
--- --pivotLonger helpers
--- helper : {l := Unit} < (Labels cs), {l := t} < cs, {l := t} < r1, ((Const t) *cs) < r1
---   => TableRow r1 -> Pi ((Const t) *cs) -> #l -> t -> Table {'key := Sigma (Labels cs), 'value := t}
--- helper = \r1 cs l u. cons ('key := inj (l := tt), 'value := r1.l) emptyTable
-
--- The predicate {l := Unit} < cs
--- is not entailed by {l := u} < (\y : *. Unit) cs, Fold cs
-
--- Type mismatch in functional dependencies for {l := Unit} < (\y : *. Unit) cs
-
-
-foo : {l := Unit} < (Labels cs) => Pi cs -> #l -> t -> Nat
-foo = \cs l x. 1
-
-
-bar : Fold cs => Pi cs -> Nat
-bar = \cs. fold #Id (foo cs) add 0 cs
-
-
-coerce : {l := A} < r => #l -> Sigma (Labels r)
-coerce = \l. inj (l := tt)
-
--- this works for the key field
-helper : {l := T} < r => Pi (Labels cs) -> #l -> T -> Table {'key := Sigma (Labels r), 'value := Sigma r}
-helper = \cs l x. cons ('key := inj (l := tt), 'value := inj (l := x)) emptyTable
-
-getCsInR1 : cs < r1 => Pi r1 -> Pi (Labels cs) -> Pi cs
-getCsInR1 = \r1 cs. prj r1
+splitCs : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pair (Pi cs) (Pi rr)
+splitCs = \r1 cs. pair (prj r1) (prj r1)
 
 projectColumns : Fold r1, Fold cs, cs < r1 => TableRow r1 -> Pi (Labels cs) -> Table {'key := Sigma (Labels cs), 'value := Sigma cs}
-projectColumns = \r1 cs. fold #Id (helper cs) vcat emptyTable (getCsInR1 r1 cs)
+projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).'1
 
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
 -- PROBLEM: requires t2 to have a column containing labels (column names) as values (e.g. String or general label type)
--- DEPENDS: label -> string
+-- NOTE: Unable to get bare T in column. If I could get coerceVs (see InterestingFoldExample.ro) to work, then I could do it.
+-- TODO: See if Garrett has a work-around.
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
@@ -430,12 +404,12 @@ projectColumns = \r1 cs. fold #Id (helper cs) vcat emptyTable (getCsInR1 r1 cs)
 -- [ ] for all `c` in `removeAll(header(t1), cs)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] `schema(t2)[c1]` is equal to `ColName`
 -- [ ] `schema(t2)[c2]` is equal to `schema(t1)[cs[0]]`
--- pivotLonger : forall r rk rr r': R[*], t: *.
---   {'key := Sigma (Labels rk)} + {'value := t} + rr ~ r,
---   rr + ((Const t)* rk) ~ r'
---     => Table r' -> Pi (Labels rk) -> Table r'
--- pivotLonger = \t cs.
---                     selectMany t (\p. projectColumns p.'1 p.'2) (\p. p.'2)
+pivotLonger :
+  Fold r1, Fold cs,
+    rr + cs ~ r1, rr + {'key := Sigma (Labels cs), 'value := Sigma cs} ~ r2
+        => Table r1 -> Pi (Labels cs) -> Table r2
+pivotLonger = \t cs.
+                    selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
 
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
 -- The inverse of `pivotLonger`.
