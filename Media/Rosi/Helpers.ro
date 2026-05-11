@@ -59,9 +59,13 @@ flattenList = foldr append nil
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
 
+--------------------------------------------------------------------------------
+-- Partition
+--------------------------------------------------------------------------------
+
+
 type Partition : * -> R[*] -> *
 type Partition = \t ks. Pi ((Const (List t))* ks)
-
 
 emptyPartition : forall t:*. Partition t ks
 emptyPartition = /\t: *. syn #(Const (List t)) (\l. nil)
@@ -73,6 +77,11 @@ extendPartition = \p k t. ana #(Const Unit) (\l. const ((l := cons t p.l) ++ (pr
 partition : (Pi r -> (Sigma (Labels ks))) -> List (Pi r) -> Partition (Pi r) ks
 partition = \key t. foldr (\r a. extendPartition a (key r) r) emptyPartition t
 
+projectPartition : forall v:*. Partition t ks -> (t -> v) -> Partition v ks
+projectPartition = /\v. \p project. syn #(Const (List v)) (\l. map project p.l)
+
+aggregatePartition : forall v rt:*. Partition v ks -> (Sigma (Labels ks) -> List v -> rt) -> Pi ((Const rt) ks)
+aggregatePartition = /\v rt. \p aggregate. syn #(Const rt) (\k. aggregate (inj (k := tt)) p.k)
 
 --------------------------------------------------------------------------------
 -- Dict
