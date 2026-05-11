@@ -162,6 +162,7 @@ tfilter = \t1 f. filter f t1
 
 -- ### `distinct :: t1:Table -> t2:Table`
 -- Retains only unique/distinct rows from an input `Table`.
+-- [x] `schema(t2)` is equal to `schema(t1)`
 -- NOTE: Requires extra Eq argument
 distinct : Table r1 -> Eq (Pi r1) -> Table r1
 distinct = \t1 eq. let ps = (enumerate t1) in (unzip (tfilter ps
@@ -228,6 +229,7 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
 -- TODO
+-- DEPENDS: implement some arithmetic
 -- Groups the values of a numeric column into bins. The parameter `n` specifies the bin width.
 -- This function is useful in creating histograms and converting continuous random variables
 -- to categorical ones.
@@ -249,7 +251,16 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [ ] `schema(t3)` is equal to `schema(r5)`
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
--- TODO 
+-- Groups the rows of a table according to a specified key selector function and creates a result 
+-- value from each group and its key. The rows of each group are projected by using a specified function.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `schema(r2)` is equal to `schema(t1)`
+-- [x] `schema(t2)` is equal to `schema(r3)`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.	
+-- TODO
+groupBy : Table r1 -> (TableRow r1 -> Sigma (Labels ks)) -> (TableRow r1 -> Sigma r1) -> (Sigma (Labels ks) -> List (Sigma r1) -> TableRow r2) -> Table r2
+groupBy = \t1 key project aggregate. sorry
+  
 
 -- ## Missing Values
 
@@ -386,23 +397,28 @@ pcHelper = \cs l x. cons ('key := inj (l := tt), 'value := inj (l := x)) emptyTa
 splitCs : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pair (Pi cs) (Pi rr)
 splitCs = \r1 cs. pair (prj r1) (prj r1)
 
+removeAll : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pi rr
+removeAll = \r1 cs. prj r1
+
 projectColumns : Fold r1, Fold cs, cs < r1 => TableRow r1 -> Pi (Labels cs) -> Table {'key := Sigma (Labels cs), 'value := Sigma cs}
 projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).'1
 
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
--- PROBLEM: requires t2 to have a column containing labels (column names) as values (e.g. String or general label type)
--- NOTE: Unable to get bare T in column. If I could get coerceVs (see InterestingFoldExample.ro) to work, then I could do it.
+-- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
+-- NOTE: split constraint might be useful here.
+-- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
+--       (see InterestingFoldExample.ro)
 -- TODO: See if Garrett has a work-around.
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
--- [ ] `cs` has no duplicates
--- [ ] for all `c` in `cs`, `c` is in `header(t1)`
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
 -- [ ] for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t1)[cs[0]]`
--- [ ] `concat(removeAll(header(t1), cs), [c1, c2])` has no duplicates
--- [ ] `header(t2)` is equal to `concat(removeAll(header(t1), cs), [c1, c2])`
--- [ ] for all `c` in `removeAll(header(t1), cs)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
--- [ ] `schema(t2)[c1]` is equal to `ColName`
+-- [x] `concat(removeAll(header(t1), cs), [c1, c2])` has no duplicates
+-- [x] `header(t2)` is equal to `concat(removeAll(header(t1), cs), [c1, c2])`
+-- [x] for all `c` in `removeAll(header(t1), cs)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [~] `schema(t2)[c1]` is equal to `ColName` [as Sigma (Labels cs)]
 -- [ ] `schema(t2)[c2]` is equal to `schema(t1)[cs[0]]`
 pivotLonger :
   Fold r1, Fold cs,
@@ -421,10 +437,10 @@ pivotLonger = \t cs.
 -- [ ] `header(t2)` is equal to `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))`
 -- [ ] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
-pivotWider : forall r rk rr r': R[*], t: *.
-  {'key := Sigma (Labels rk)} + {'value := t} + rr ~ r,
-  rr + ((Const (Option t))* rk) ~ r'
-          => Table r -> Pi (Eq r) -> Table r'
+pivotWider :
+  {'key := Sigma (Labels cs)} + {'value := t} + rr ~ r1,
+  rr + ((Const (Option t))* cs) ~ r2
+          => Table r1 -> Pi (Eq rr) -> Table r2
 pivotWider = \t eqs.
                 -- TODO
                 -- get all the rows which are distinct except for the values at lk and lv.

@@ -59,6 +59,14 @@ flattenList = foldr append nil
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
 
+emptyPartition : forall t: *. Pi ((Const (List t))* ks)
+emptyPartition = /\t: *. syn #(Const (List t)) (\l. nil)
+
+-- helpers for groupBy
+partition : List (Pi r) -> (Pi r -> (Sigma ks)) -> Pi ((Const (List (Pi r))) ks)
+partition = \t key. emptyPartition
+
+
 --------------------------------------------------------------------------------
 -- Dict
 --------------------------------------------------------------------------------
@@ -171,6 +179,10 @@ nonEmptyPi = \cs. syn #(\t. Maybe (NonEmptyList t)) (\l. nonEmpty cs.l)
 headNonEmpty : NonEmptyList a -> a
 headNonEmpty = 'Cons: x -> x.'1
 
+--------------------------------------------------------------------------------
+-- Table helpers
+--------------------------------------------------------------------------------
+
 -- helpers for flatten
 
 -- helpers for flatten
@@ -191,3 +203,5 @@ transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
                                                              (transpose (columnsTail cs)))
                                         |  'Nothing: u -> nil)
                                                          ((unliftMaybePi . nonEmptyPi) cs))
+
+---
