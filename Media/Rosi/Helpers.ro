@@ -59,12 +59,19 @@ flattenList = foldr append nil
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
 
-emptyPartition : forall t: *. Pi ((Const (List t))* ks)
+type Partition : * -> R[*] -> *
+type Partition = \t ks. Pi ((Const (List t))* ks)
+
+
+emptyPartition : forall t: *. Partition t ks
 emptyPartition = /\t: *. syn #(Const (List t)) (\l. nil)
 
+extendPartition : Partition t ks -> Sigma ks -> t -> Partition t ks
+extendPartition = \p k t. ana #Id (\l. const ((l := cons t p.l) ++ (prj p))) k
+
 -- helpers for groupBy
-partition : List (Pi r) -> (Pi r -> (Sigma ks)) -> Pi ((Const (List (Pi r))) ks)
-partition = \t key. emptyPartition
+partition : (Pi r -> (Sigma ks)) -> List (Pi r) -> Partition (Pi r) ks
+partition = \key t. foldr (\r a. extendPartition a (key r) r) emptyPartition t
 
 
 --------------------------------------------------------------------------------
