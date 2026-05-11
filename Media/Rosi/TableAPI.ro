@@ -258,8 +258,16 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [x] `schema(t2)` is equal to `schema(r3)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.	
 -- TODO
--- groupBy : Table r1 -> (TableRow r1 -> Sigma (Labels ks)) -> (TableRow r1 -> Sigma r1) -> (Sigma (Labels ks) -> List (Sigma r1) -> TableRow r2) -> Table r2
--- groupBy = \t1 key project aggregate. let partitioned = partition key t1 in sorry
+
+groupBy : Table r1 
+    -> (TableRow r1 -> Sigma (Labels ks)) 
+      -> (TableRow r1 -> v)
+        -> (Sigma (Labels ks) -> List v -> TableRow r2) -> Table r2
+groupBy = \t1 key project aggregate.
+  let partitioned = partition key t1 in
+    (let projected = sorry in
+      (let aggregated = sorry in
+        sorry))
   
 
 -- ## Missing Values
