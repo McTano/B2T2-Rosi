@@ -63,14 +63,14 @@ type Partition : * -> R[*] -> *
 type Partition = \t ks. Pi ((Const (List t))* ks)
 
 
-emptyPartition : forall t: *. Partition t ks
+emptyPartition : forall t:*. Partition t ks
 emptyPartition = /\t: *. syn #(Const (List t)) (\l. nil)
 
-extendPartition : Partition t ks -> Sigma ks -> t -> Partition t ks
-extendPartition = \p k t. ana #Id (\l. const ((l := cons t p.l) ++ (prj p))) k
+extendPartition : Partition t ks -> Sigma (Labels ks) -> t -> Partition t ks
+extendPartition = \p k t. ana #(Const Unit) (\l. const ((l := cons t p.l) ++ (prj p))) k
 
 -- helpers for groupBy
-partition : (Pi r -> (Sigma ks)) -> List (Pi r) -> Partition (Pi r) ks
+partition : (Pi r -> (Sigma (Labels ks))) -> List (Pi r) -> Partition (Pi r) ks
 partition = \key t. foldr (\r a. extendPartition a (key r) r) emptyPartition t
 
 
