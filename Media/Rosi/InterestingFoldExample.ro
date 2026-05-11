@@ -47,7 +47,7 @@ bar = \cs. fold #Id (foo cs) add 0 cs
 -- maybe we could have a stronger rule about `Const`
 
 -- Here's another one:
-coerceVs : cs ~ cs, cs < (Const T)* cs => Sigma cs -> T
+coerceVs : cs < (Const T)* cs => Sigma cs -> T
 coerceVs = /\T:*. \cs. ana #(Const T) (\l x. x) (inj cs)
 
 -- fails with: 

@@ -408,10 +408,14 @@ splitCs = \r1 cs. pair (prj r1) (prj r1)
 removeAll : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pi rr
 removeAll = \r1 cs. prj r1
 
+removeAllAlt : cs + rr ~ r1 => Pi r1 -> Pi rr
+removeAllAlt = \r1. prj r1
+
 projectColumns : Fold r1, Fold cs, cs < r1 => TableRow r1 -> Pi (Labels cs) -> Table {'key := Sigma (Labels cs), 'value := Sigma cs}
 projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).'1
 
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
+-- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
 -- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
 -- NOTE: split constraint might be useful here.
 -- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
@@ -435,9 +439,43 @@ pivotLonger :
 pivotLonger = \t cs.
                     selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
 
+partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
+partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
+
+findValue :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+  rr + ((Const (Maybe T))* cs) ~ r2, {l := Unit} < (Labels cs)
+  => #l -> List (Pi r1) -> Maybe T
+findValue = \l rs. maybe Nothing (\r. Just r.'value) (find (\r1. sorry) rs)
+
+-- build row over cs, with value set to the value in the row matching that label, if it exists.
+-- to build this row, could fold over the list with an accumulator Pi (Const(Maybe t))* rk
+-- for each row, overwrite the value in the corresponding column according to the case of Sigma cs
+synthOne :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+    rr + ((Const (Maybe T))* cs) ~ r2
+    => Pi {'shared := Pi rr, 'rows := List (Pi r1)} -> Pi r2
+synthOne =
+  /\T:*, r1 r2: R[*]. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
+
+synthFromEquivs :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+    rr + ((Const (Maybe T))* cs) ~ r2
+    => List (Pi {'shared := Pi rr,'rows := List (Pi r1)}) -> Pi (Labels cs) -> List (Pi r2)
+synthFromEquivs =
+  \equivs cs. (map synthOne equivs)
+
+getEquivs :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1 =>
+  List (Pi r1) -> Pi (Labels cs) -> Eq (Pi rr) -> List (Pi {'shared := Pi rr,'rows := List (Pi r1)})
+getEquivs = \t1 cs eq. map (\r. ('shared := prj r, 'rows := tfilter t1 (partialEquality eq r))) t1
+
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
+-- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
+-- TODO
 -- The inverse of `pivotLonger`.
 -- NOTE: based on the example in the Toohey 2026.
+-- NOTE: requires extra Eq argument
 -- [ ] `c1` is in `header(t1)`
 -- [ ] `c2` is in `header(t1)`
 -- [ ] `schema(t1)[c1]` is `ColName`
@@ -446,17 +484,14 @@ pivotLonger = \t cs.
 -- [ ] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
 pivotWider :
-  {'key := Sigma (Labels cs)} + {'value := t} + rr ~ r1,
-  rr + ((Const (Option t))* cs) ~ r2
-          => Table r1 -> Pi (Eq rr) -> Table r2
-pivotWider = \t eqs.
-                -- TODO
-                -- get all the rows which are distinct except for the values at lk and lv.
-                -- for each distinct row:
-                  -- select all rows equal to that row
-                  -- build row over rk, with value set to the value in the row matching that label, if it exists.
-                    -- to build this row, could fold over the list with an accumulator Pi (Const(Option t))* rk
-                    -- for each row, overwrite the value in the corresponding column according to the case of Sigma rk
-                  -- concatenate this new row with the original row.
-                emptyTable
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+  rr + ((Const (Maybe T))* cs) ~ r2
+          => Table r1 -> Eq (Pi rr) -> Pi (Labels cs) -> Table r2
+pivotWider = \t1 eq cs.
+                -- -- TODO
+                --   -- for each distinct row:
+                  let uniqs = distinct t1 (partialEquality eq) in
+                --     -- get all the rows which are distinct except for the values at lk and lv.
+                --       -- select all rows equal to that row
+                            synthFromEquivs (getEquivs uniqs cs eq) cs
 
