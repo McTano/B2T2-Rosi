@@ -259,6 +259,9 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.	
 -- TODO
 
+projectPartition : forall v:*. Partition t ks -> (t -> v) -> Partition v ks
+projectPartition = /\v. \p project. syn #(Const (List v)) (\l. map project p.l)
+
 groupBy : Table r1 
     -> (TableRow r1 -> Sigma (Labels ks)) 
       -> (TableRow r1 -> v)
