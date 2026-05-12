@@ -486,12 +486,12 @@ getEquivs = \t1 eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (p
 -- The inverse of `pivotLonger`.
 -- NOTE: based on the example in the Toohey 2026.
 -- NOTE: requires extra Eq argument
--- [ ] `c1` is in `header(t1)`
--- [ ] `c2` is in `header(t1)`
--- [ ] `schema(t1)[c1]` is `ColName`
--- [ ] `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))` has no duplicates
--- [ ] `header(t2)` is equal to `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))`
--- [ ] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [x] `c1` is in `header(t1)`
+-- [x] `c2` is in `header(t1)`
+-- [x] `schema(t1)[c1]` is `ColName` [Sigma (Labels cs)]
+-- [x] `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))` has no duplicates
+-- [x] `header(t2)` is equal to `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))`
+-- [x] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
 pivotWider :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
