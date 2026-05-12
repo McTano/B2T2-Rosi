@@ -267,18 +267,6 @@ groupBy = /\r2: R[*]. \t1 key project aggregate.
     (let projected = projectPartition partitioned project  in
       (let aggregated = aggregatePartition projected aggregate in
         fold #(Const (Pi r2)) (\l x. cons x nil) vcat nil aggregated))
-  
-
--- ## Missing Values
-
--- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
-completeCases : {l := v} < r1 => Table (Maybe* r1) -> #l -> List Bool
-completeCases = \t1 l. map (\r. isJust (r.l)) t1
-
--- ### `dropna :: t1:Table -> t2:Table`
--- TODO 
--- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
--- TODO 
 
 
 -- ## Utilities
@@ -360,7 +348,7 @@ transformAndRenameColumn = \t1 l1 l2 f. map (\r1. (prj r1) ++ (l2 := f r1.l1)) t
 --     [x] if `c'` is equal to `c` then `schema(t2)[c']` is equal to the sort of `v2`
 --     [x] otherwise, then `schema(t2)[c']` is equal to `schema(t1)[c']`
 --     [ ] `nrows(t2)` is equal to `nrows(t1)`
-transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 =>  Table r1 -> #l -> (v1 -> v2) -> Table r2
+transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 => Table r1 -> #l -> (v1 -> v2) -> Table r2
 transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
@@ -419,6 +407,28 @@ groupJoin = \t1 t2 getKey1 getKey2 eq aggregate.
 join : Table r1 -> Table r2 -> (TableRow r1 -> k) -> (TableRow r2 -> k) -> Eq k -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
 join = \t1 t2 getKey1 getKey2 eq combine.
             selectMany t1 (\p. let r1 = p.'1 in (let k = getKey1 r1 in (tfilter t2 (\r2. eq (getKey2 r2) k)))) combine
+
+-- ## Missing Values
+
+-- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
+completeCases : {l := v} < r1 => Table (Maybe* r1) -> #l -> List Bool
+completeCases = \t1 l. map (\r. isJust (r.l)) t1
+
+-- ### `dropna :: t1:Table -> t2:Table`
+-- PROBLEM: Not sure if I can do this when only some rows Maybe typed.
+-- NOTE: This is probably a place where the split constraint is useful.
+-- [ ] `schema(t2)` is equal to `schema(t1)`
+-- Removes rows that have some values missing
+
+
+-- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
+-- Scans the named column and fills in `v` when a cell is missing value.
+-- [x] `c` is in `header(t1)`
+-- [x] `v` is of sort `schema(t1)[c]`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+fillna : {c := Maybe v} < r1 => Table r1 -> #c -> v -> Table r1 
+fillna = \t1 c v. transformColumn t1 c (maybe (Just v) Just)
 
 -- ## Data Cleaning
 
