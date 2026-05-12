@@ -443,41 +443,43 @@ pivotLonger = \t cs.
 partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
 partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
 
+-- check if the key stored in the sum at l2 is equal to l1
 labelPredicate :
-  {l := Unit} < (Labels cs),
-  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1
-  => #l -> Pi rr -> Pi {'key := Sigma (Labels cs), 'value := T} -> Bool
+  {l1 := Unit} < (Labels cs),
+  {l2 := Sigma (Labels cs)} < r
+  => #l1 -> #l2 -> Pi r -> Bool
 labelPredicate =
- \l shared r. ana #Id (\l1 u. (case l1 (\u. True) | (\u. False)) r.'key) (l := tt)
+  \l1 l2 r. (case l1 (\u. True) | (\u. False)) r.l2
 
 findValue :
-  {l := Unit} < (Labels cs),
-  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
-  rr + ((Const (Maybe T))* cs) ~ r2
-  => #l -> Pi rr -> List Pi {'key := Sigma (Labels cs), 'value := T} -> Maybe T
-findValue = \l shared rows. maybe Nothing (\r. Just r.'value) (find (labelPredicate l shared) rows)
+  {l := Unit} < (Labels cs)
+  => #l -> List Pi {'key := Sigma (Labels cs), 'value := T} -> Maybe T
+findValue = \l rows. maybe Nothing (\r. Just r.'value) (find (labelPredicate l 'key) rows)
 
 -- build row over cs, with value set to the value in the row matching that label, if it exists.
 -- to build this row, could fold over the list with an accumulator Pi (Const(Maybe t))* rk
 -- for each row, overwrite the value in the corresponding column according to the case of Sigma cs
+type Equivs : R[*] -> R[*] -> * -> *
+type Equivs = \rr cs T. Pi {'shared := Pi rr, 'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})}
+
 synthOne :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
     rr + ((Const (Maybe T))* cs) ~ r2
-    => Pi {'shared := Pi rr, 'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})} -> Pi r2
+    => Equivs rr cs T -> Pi r2
 synthOne =
-  /\T:*, r1 r2: R[*]. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'shared r.'rows))
+  /\T:*. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
 
 synthFromEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
     rr + ((Const (Maybe T))* cs) ~ r2
-    => List (Pi {'shared := Pi rr,'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})}) -> Pi (Labels cs) -> List (Pi r2)
+    => List (Equivs rr cs T) -> List (Pi r2)
 synthFromEquivs =
-  \equivs cs. (map synthOne equivs)
+  \equivs. (map synthOne equivs)
 
 getEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1 =>
-  List (Pi r1) -> Pi (Labels cs) -> Eq (Pi rr) -> List (Pi {'shared := Pi rr,'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})})
-getEquivs = \t1 cs eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (partialEquality eq r))))) t1
+  List (Pi r1) -> Eq (Pi rr) -> List (Equivs rr cs T)
+getEquivs = \t1 eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (partialEquality eq r))))) t1
 
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
 -- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
@@ -499,5 +501,5 @@ pivotWider = \t1 eq cs.
                 -- get all the rows which are distinct except for the values at 'key and 'value.
                   let uniqs = distinct t1 (partialEquality eq) in
                 -- select all rows equal to that row except at 'key and 'value
-                            synthFromEquivs (getEquivs uniqs cs eq) cs
+                            synthFromEquivs (getEquivs uniqs eq)
 
