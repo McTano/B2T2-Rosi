@@ -146,15 +146,19 @@ selectColumnsAlt : r2 < r1 => Table r1 -> Table r2
 selectColumnsAlt = \t1. map prj t1
 
 -- ### `head :: t1:Table * n:Number -> t2:Table`
--- PROBLEM: need negative numbers
+-- NOTE: had to implement Int type: Int = Sigma {'Plus: Nat, 'Minus: Nat}
 -- NOTE: renamed to `tableHead`
+-- Returns the first `n` rows of the table based on position. For negative values of `n`, this function returns all rows except the last `n` rows.
 -- [ ] if `n` is non-negative then `n` is in `range(nrows(t1))`
 -- [ ] if `n` is negative then `- n` is in `range(nrows(t1))`
 -- [x] `schema(t2)` is equal to `schema(t1)`
 -- [ ] if `n` is non-negative then `nrows(t2)` is equal to `n`
 -- [ ] if `n` is negative then `nrows(t2)` is equal to `nrows(t1) + n`
-tableHead : Table r1 -> Nat -> Table r1
-tableHead = \t1 n. takeN t1 n
+tableHead : Table r1 -> Int -> Table r1
+tableHead = \t1.  'Plus: n -> takeN t1 n
+                | 'Minus: n ->
+                  ( 'Zero: u -> nil
+                  | 'Succ: m -> takeN t1 (monus (nrows t1) n)) n
 
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
 tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
