@@ -439,14 +439,24 @@ pivotLonger :
 pivotLonger = \t cs.
                     selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
 
+
+-- PivotWider helpers
 partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
 partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
 
+labelPredicate :
+  {l := Unit} < (Labels cs),
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1
+  => #l -> Pi rr -> Pi {'key := Sigma (Labels cs), 'value := T} -> Bool
+labelPredicate =
+ \l shared r. ana #Id (\l1 u. (case l1 (\u. True) | (\u. False)) r.'key) (l := tt)
+
 findValue :
+  {l := Unit} < (Labels cs),
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
-  rr + ((Const (Maybe T))* cs) ~ r2, {l := Unit} < (Labels cs)
-  => #l -> List (Pi r1) -> Maybe T
-findValue = \l rs. maybe Nothing (\r. Just r.'value) (find (\r1. sorry) rs)
+  rr + ((Const (Maybe T))* cs) ~ r2
+  => #l -> Pi rr -> List Pi {'key := Sigma (Labels cs), 'value := T} -> Maybe T
+findValue = \l shared rows. maybe Nothing (\r. Just r.'value) (find (labelPredicate l shared) rows)
 
 -- build row over cs, with value set to the value in the row matching that label, if it exists.
 -- to build this row, could fold over the list with an accumulator Pi (Const(Maybe t))* rk
@@ -454,21 +464,21 @@ findValue = \l rs. maybe Nothing (\r. Just r.'value) (find (\r1. sorry) rs)
 synthOne :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
     rr + ((Const (Maybe T))* cs) ~ r2
-    => Pi {'shared := Pi rr, 'rows := List (Pi r1)} -> Pi r2
+    => Pi {'shared := Pi rr, 'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})} -> Pi r2
 synthOne =
-  /\T:*, r1 r2: R[*]. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
+  /\T:*, r1 r2: R[*]. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'shared r.'rows))
 
 synthFromEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
     rr + ((Const (Maybe T))* cs) ~ r2
-    => List (Pi {'shared := Pi rr,'rows := List (Pi r1)}) -> Pi (Labels cs) -> List (Pi r2)
+    => List (Pi {'shared := Pi rr,'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})}) -> Pi (Labels cs) -> List (Pi r2)
 synthFromEquivs =
   \equivs cs. (map synthOne equivs)
 
 getEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1 =>
-  List (Pi r1) -> Pi (Labels cs) -> Eq (Pi rr) -> List (Pi {'shared := Pi rr,'rows := List (Pi r1)})
-getEquivs = \t1 cs eq. map (\r. ('shared := prj r, 'rows := tfilter t1 (partialEquality eq r))) t1
+  List (Pi r1) -> Pi (Labels cs) -> Eq (Pi rr) -> List (Pi {'shared := Pi rr,'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})})
+getEquivs = \t1 cs eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (partialEquality eq r))))) t1
 
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
 -- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
