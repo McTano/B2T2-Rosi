@@ -420,7 +420,6 @@ projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).
 -- NOTE: split constraint might be useful here.
 -- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
 --       (see InterestingFoldExample.ro)
--- TODO: See if Garrett has a work-around.
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
@@ -497,10 +496,8 @@ pivotWider :
   rr + ((Const (Maybe T))* cs) ~ r2
           => Table r1 -> Eq (Pi rr) -> Pi (Labels cs) -> Table r2
 pivotWider = \t1 eq cs.
-                -- -- TODO
-                --   -- for each distinct row:
+                -- get all the rows which are distinct except for the values at 'key and 'value.
                   let uniqs = distinct t1 (partialEquality eq) in
-                --     -- get all the rows which are distinct except for the values at lk and lv.
-                --       -- select all rows equal to that row
+                -- select all rows equal to that row except at 'key and 'value
                             synthFromEquivs (getEquivs uniqs cs eq) cs
 
