@@ -294,6 +294,8 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- [ ] `getColumn(t2, "key")` has no duplicates
 -- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
+groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Table {'key := T,'groups := Table r1}
+groupByRetentive = sorry
 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- TODO
@@ -306,6 +308,10 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
 -- [ ] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
+groupBySubtractive : r2 + {c := T} ~ r1 => Table r1 -> #c -> Table {'key := T, 'groups := Table r2}
+groupBySubtractive = sorry
+
+
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
 -- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f`
