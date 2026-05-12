@@ -256,8 +256,7 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [x] `schema(r1)` is equal to `schema(t1)`
 -- [x] `schema(r2)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(r3)`
--- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.	
-
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
 groupBy : forall r2. Fold ks
   => Table r1 
     -> (TableRow r1 -> Sigma (Labels ks)) 
@@ -285,9 +284,28 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- ## Utilities
 
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
--- TODO 
+-- TODO
+-- Categorizes rows of the input table into groups by the key of each row. The key is computed by accessing the named column.
+-- [ ] `c` is in `header(t1)`
+-- [ ] `schema(t1)[c]` is a categorical sort
+-- [ ] `header(t2)` is equal to `["key", "groups"]`
+-- [ ] `schema(t2)["key"]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)["groups"]` is `Table`
+-- [ ] `getColumn(t2, "key")` has no duplicates
+-- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
+
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
--- TODO 
+-- TODO
+-- Similar to `groupByRetentive` but the named column is removed in the output.
+-- [ ] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort
+-- [ ] `ci2` is in `header(t1)`
+-- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- [ ] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- [ ] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
 -- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f`
