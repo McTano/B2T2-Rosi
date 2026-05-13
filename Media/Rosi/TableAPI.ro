@@ -206,11 +206,11 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 
 -- ## Ordering
 
-type Ord : * -> *
-type Ord = \a. (a -> a -> Int)
+type Leq : * -> *
+type Leq = \a. (a -> a -> Bool)
 
 -- placeholder for sort function
-sort : List a -> Ord a -> List a
+sort : Leq a -> List a ->  List a
 sort = \ls cmp. sorry
 
 
@@ -236,14 +236,22 @@ sort = \ls cmp. sorry
 -- [ ] `nrows(t2)` is equal to `nrows(t1)`
 -- [ ] `schema(t2)` is equal to `schema(t1)`
 
+multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Leq (Tablerow r)
+multiCompare = \cmps. sorry
+
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- TODO
 -- DEPENDS: sorting
+-- NOTE: comparers must all use the same K type.
 -- Sorts the rows of a `Table` in ascending order by using a sequence of specified comparers.
 -- `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
--- `schema(r)` is equal to `schema(t1)`
--- `schema(t2)` is equal to `schema(t1)`
--- `nrows(t2)` is equal to `nrows(t1)`
+-- [x] `schema(r)` is equal to `schema(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+orderBy : Table r1 -> List (Pair (TableRow r1 -> k) (Leq k)) -> Table r1
+orderBy = \t1 cmps.
+  let cmp = (multiCompare cmps) in
+    sort cmp t1
 
 -- ## Aggregate
 
