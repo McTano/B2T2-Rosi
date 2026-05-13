@@ -227,4 +227,16 @@ transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
                                         |  'Nothing: u -> nil)
                                                          ((unliftMaybePi . nonEmptyPi) cs))
 
----
+
+-- Speculative Functions
+
+-- NOTE:
+-- I was thinking about how to support untagged unions of labels, about which we only know
+-- that they appear in a given row. It occurred to me that we could simulate this with
+-- Sigma (Labels r), and still return a tagged union of values from r,
+-- so we wouldn't need to introduce untagged unions of values.
+-- Not sure if there is a use for this, but I think this should be a legal move.
+
+-- select from r at an unknown label in r
+-- selectField : Pi r -> Sigma (Labels r) -> Sigma r
+-- selectField = \r ls. ana #Id (\l v. inj (l := r.l)) ls

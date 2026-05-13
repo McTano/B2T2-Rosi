@@ -226,6 +226,7 @@ sort = \ls cmp. sorry
 
 
 -- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- TODO
 -- DEPENDS: sorting
 -- Given a `Table` and a sequence of column names in that `Table`, return a `Table` with the same rows ordered ascendingly
 -- based on the named columns.
@@ -238,6 +239,7 @@ sort = \ls cmp. sorry
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- TODO
 -- DEPENDS: sorting
+-- Sorts the rows of a `Table` in ascending order by using a sequence of specified comparers.
 -- `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- `schema(r)` is equal to `schema(t1)`
 -- `schema(t2)` is equal to `schema(t1)`
@@ -335,7 +337,7 @@ groupBy = /\r2: R[*]. \t1 key project aggregate.
 -- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
 groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Table {'key := T,'groups := Table r1}
-groupByRetentive = sorry
+groupByRetentive = sorry 
 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- TODO
