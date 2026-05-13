@@ -206,17 +206,6 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 
 -- ## Ordering
 
-type Leq : * -> *
-type Leq = \a. (a -> a -> Bool)
-
-type Compare : * -> *
-type Compare = \a. (a -> a -> Int)
-
--- placeholder for sort function
-sort : Compare a -> List a ->  List a
-sort = \ls cmp. sorry
-
-
 -- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
 -- TODO
 -- DEPENDS: sorting
@@ -245,7 +234,7 @@ multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Compare (TableRow r)
 multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
                                                | 'Cons: xs -> if (xs.'1.'2 (xs.'1.'1 a) (xs.'1.'1 b))
                                                                  (if (xs.'1.'2 (xs.'1.'1 b) (xs.'1.'1 a))
-                                                                     (multiCompareAlt xs.'2 a b)
+                                                                       (multiCompareAlt xs.'2 a b)
                                                                      (inj ('Minus := 1)))
                                                                  (inj ('Plus := 1))) cmps)
 

@@ -1,11 +1,31 @@
 import Ro.Base, Data.List, Data.Nat, EncodeTables
-
 --------------------------------------------------------------------------------
 -- Int type
 --------------------------------------------------------------------------------
 
 type Int : *
 type Int = Sigma {'Plus := Nat, 'Minus := Nat}
+
+--------------------------------------------------------------------------------
+-- Generic types
+--------------------------------------------------------------------------------
+
+type Leq : * -> *
+type Leq = \a. (a -> a -> Bool)
+
+type Compare : * -> *
+type Compare = \a. (a -> a -> Int)
+
+--------------------------------------------------------------------------------
+-- Nat utils
+--------------------------------------------------------------------------------
+
+compN : Compare Nat
+compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> ('Plus: 0)
+                                   | 'Succ: b' -> ('Plus: 1))
+                     | 'Succ: a' -> ( 'Zero: u -> ('Minus: 1)
+                                    | 'Succ: b' -> compN a' b')))
+
 
 --------------------------------------------------------------------------------
 -- List utils
@@ -65,6 +85,11 @@ flattenList = foldr append nil
 
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
+
+-- placeholder for sort function
+sort : Compare a -> List a ->  List a
+sort = \ls cmp. sorry
+
 
 --------------------------------------------------------------------------------
 -- Partition
