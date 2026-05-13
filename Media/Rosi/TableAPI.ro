@@ -251,16 +251,31 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [ ] `schema(t2)["group"]` is `String`
 -- [ ] `schema(t2)["count"]` is `Number`
 
+
+-- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
+-- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
+-- i.e. Pi {l := r1.l -> r2.l}
+-- i.e. we would like to express that some property holds for each {l := v} in a record.
+-- Questions for Garrett:
+-- 1. can we support this in our system?
+-- 2. would something like Toohey et al.'s `All` constraint let us do this?
+-- 2. could we add something to our system that would let us support this, and would it threaten the nice properties of our theory?
+
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- TODO 
--- Partitions rows into groups and summarize each group with the functions in `agg`. Each element 
+-- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
 -- of `agg` specifies the output column, the input column, and the function that compute the 
 -- summarizing value (e.g. average, sum, and count).
--- [ ] `schema(r1)` is equal to `schema(t1)`
--- [ ] `schema(r2)` is equal to `schema(t2)`
--- [ ] `schema(r3)` is equal to `schema(t1)`
--- [ ] `schema(r4)` is equal to `schema(t2)`
--- [ ] `schema(t3)` is equal to `schema(r5)`
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
+-- [x] `ci2` is in `header(t1)`
+-- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
+pivotTable : {c1 := v1} < r1, {c1 := v1} + {c2 := v2} ~ r2  => Table r1 -> #c2 -> #c1 -> (v1 -> v2) -> Table r2
+pivotTable = \t1 c2 c1 agg. map (\r. (c1 := r.c1, c2 := agg r.c1)) t1
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
