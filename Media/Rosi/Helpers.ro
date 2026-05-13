@@ -20,6 +20,11 @@ type Compare = \a. (a -> a -> Int)
 -- Nat utils
 --------------------------------------------------------------------------------
 
+leqN : Leq Nat
+leqN = fix (\leqN. ( 'Zero: u -> (const True)
+                   | 'Succ: a' -> ( 'Zero: u -> False
+                                  | 'Succ: b' -> leqN a' b')))
+
 compN : Compare Nat
 compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> ('Plus: 0)
                                    | 'Succ: b' -> ('Plus: 1))
