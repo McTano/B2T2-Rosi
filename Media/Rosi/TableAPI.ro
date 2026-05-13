@@ -220,13 +220,21 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 
 -- ## Aggregate
 
--- ### `count :: t1:Table * c:ColName -> t2:Table`
--- NOTE: Requires extra Eq argument
+-- helpers for count
 countHelper : {l := v} < r => Table r -> #l -> Eq v -> Dict v Nat
 countHelper = \tb l eq. foldr (\e a. (inc a eq e.l)) emptyDict tb
 
 countDictToTable : Dict v Nat -> Table {'value := v, 'count := Nat}
 countDictToTable = \d. foldr (\e a. cons ('value := e.'1, 'count := e.'2) a) nil d
+
+-- ### `count :: t1:Table * c:ColName -> t2:Table`
+-- NOTE: Requires extra Eq argument
+-- [x] `c` is in `header(t1)`
+-- [x] `schema(t1)[c]` is a categorical sort
+-- [x] `header(t2)` is equal to `["value", "count"]`
+-- [x] `schema(t2)["value"]` is equal to `schema(t1)[c]`
+-- [x] `schema(t2)["count"]` is equal to `Number`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
 
 count : {l := v} < r => Table r -> #l -> Eq v -> Table {'value := v, 'count := Nat}
 count = \tb l eq. countDictToTable (countHelper tb l eq)
