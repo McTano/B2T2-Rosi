@@ -54,7 +54,7 @@ match = \r1 eqs r2. (eqs (prj r1) (prj r2))
 -- in success, map Just over the matching row,
 -- in failure, return nothing Record
 leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Pi (r1 + (Maybe* r2'))
-leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybe (prj x))
+leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybePi (prj x))
                                         | 'Nothing: u -> nothingRecord)
                                             (find (match r1 eqs) t2)
 
@@ -267,10 +267,24 @@ tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leq
 -- PROBLEM: Can't infer the predicate needed to select r.c as Nat:
 -- The predicate {l := Nat} < r1 is not entailed by 
 -- {l := u} < (\y : *. Unit) cs, (\y : *. Nat) cs < r1, (\y : *. Unit) cs < (\y : *. Unit) r1
+-- either need to support the inference from `{c := u} < (\y : *. Unit) cs, ((Const Nat)* cs) < r1` to `{c := Nat} < r1`
+-- or have an explict `All` constraint a la Toohey
 -- either need to support the inference from ((Const Nat)* cs) < r1 to {c := Nat} < r1
 -- or have an explict All constraint a la Toohey
+
 -- sortByColumns : ((Const Nat)* cs) < r1 => Table r1 -> (List (Sigma (Labels cs))) -> Bool -> Table r1
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #Id (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
+
+-- Reworking it to use (((Const Nat)* cs) + rr) in place of r1 changes the error to
+-- While checking the term TableAPI.orderBy t1
+-- While checking the term t1
+-- While comparing the types List Pi z#24 and List Pi z#69
+--   Type mismatch in functional dependencies for List Pi z#24 ~ List Pi z#69
+--   type List Pi z#24
+--   was expected to be List Pi z#69
+
+-- sortByColumns : Table (((Const Nat)* cs) + rr) -> (List (Sigma (Labels cs))) -> Bool -> Table (((Const Nat)* cs) + rr)
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
 
 -- ## Aggregate
@@ -310,6 +324,7 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
 -- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
 -- i.e. Pi {l := r1.l -> r2.l}
+-- ^ Rereading the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in 
 -- i.e. we would like to express that some property holds for each {l := v} in a record.
 -- Questions for Garrett:
 -- 1. can we support this in our system?
@@ -502,9 +517,15 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- ### `dropna :: t1:Table -> t2:Table`
 -- PROBLEM: Not sure if I can do this when only some rows Maybe typed.
 -- NOTE: This is probably a place where the split constraint is useful.
--- [ ] `schema(t2)` is equal to `schema(t1)`
+-- NOTE: When all rows are Maybe, I find myself reaching for something equivalent to an `All` constraint.
+--       but I don't actually need it here.
+--       Table (Maybe* r) works when i use it directly as a type, but I can't get it to typecheck if I try to
+--       make it a constraint, like r' ~ (Maybe* r)
+-- NOTE: We could also define a version that removes the Maybe* from the return type by just omitting `(map liftMaybePi)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
 -- Removes rows that have some values missing
-
+dropna : Fold r => Table (Maybe* r) -> Table (Maybe* r)
+dropna = (map liftMaybePi) . filterMaybe . (map unliftMaybePiPi)
 
 -- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
 -- Scans the named column and fills in `v` when a cell is missing value.

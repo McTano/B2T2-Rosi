@@ -153,8 +153,8 @@ inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
 -- Maybe utils
 --------------------------------------------------------------------------------
 
-liftMaybe : Pi z -> Pi (Maybe * z)
-liftMaybe = \r. syn #Maybe (\l. Just r.l)
+liftMaybePi : Pi z -> Pi (Maybe * z)
+liftMaybePi = \r. syn #Maybe (\l. Just r.l)
 
 nothingRecord : Pi (Maybe* z)
 nothingRecord = syn #Maybe (const Nothing)
@@ -176,12 +176,12 @@ isNonEmpty = 'Cons: x -> True | 'Nil: u -> False
 allNonEmpty : Fold cs => Pi (List* cs) -> Bool
 allNonEmpty = fold #List (const isNonEmpty) and True
 
--- WARNING: Non-Terminating if a is Nothing
+-- UNSAFE: Non-Terminating if a is Nothing
 fromJust_DANGER_ : Maybe a -> a
 fromJust_DANGER_ = fromMaybe (fix id)
 
-unliftMaybePi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
-unliftMaybePi = \r. if (isJusts r)
+unliftMaybePiPi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
+unliftMaybePiPi = \r. if (isJusts r)
                  (Just (syn #Id (\k. fromJust_DANGER_ r.k)))
                  Nothing
 
@@ -255,7 +255,7 @@ transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
 transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
                                                              (transpose (columnsTail cs)))
                                         |  'Nothing: u -> nil)
-                                                         ((unliftMaybePi . nonEmptyPi) cs))
+                                                         ((unliftMaybePiPi . nonEmptyPi) cs))
 
 
 -- Speculative Functions
