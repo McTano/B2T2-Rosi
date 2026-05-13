@@ -226,9 +226,9 @@ multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
 
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- DEPENDS: sorting
--- NOTE: comparers must all use the same K type.
--- NOTE: As Toohey paper says, this function requires existential types to allow K to vary between comparers.
+-- PROBLEM: As Toohey paper notes, this function requires existential types to allow K to vary between comparers.
 -- Sorts the rows of a `Table` in ascending order by using a sequence of specified comparers.
+-- NOTE: as implemented, comparers must all use the same K type, but it should be allowed to vary.
 -- `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- [x] `schema(r)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
@@ -356,6 +356,7 @@ groupBy = /\r2: R[*]. \t1 key project aggregate.
 
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
 -- TODO
+-- NOTE: Requires extra Eq argument
 -- Categorizes rows of the input table into groups by the key of each row. The key is computed by accessing the named column.
 -- [ ] `c` is in `header(t1)`
 -- [ ] `schema(t1)[c]` is a categorical sort
@@ -365,11 +366,12 @@ groupBy = /\r2: R[*]. \t1 key project aggregate.
 -- [ ] `getColumn(t2, "key")` has no duplicates
 -- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
-groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Table {'key := T,'groups := Table r1}
-groupByRetentive = sorry 
+groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r1}
+groupByRetentive = \t1 c eq. sorry 
 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- TODO
+-- NOTE: Requires extra Eq argument
 -- Similar to `groupByRetentive` but the named column is removed in the output.
 -- [ ] for all `c` in `cs`, `c` is in `header(t1)`
 -- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort
@@ -379,8 +381,8 @@ groupByRetentive = sorry
 -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
 -- [ ] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
-groupBySubtractive : r2 + {c := T} ~ r1 => Table r1 -> #c -> Table {'key := T, 'groups := Table r2}
-groupBySubtractive = sorry
+groupBySubtractive : r2 + {c := T} ~ r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r2}
+groupBySubtractive = \t1 c eq. sorry
 
 
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
