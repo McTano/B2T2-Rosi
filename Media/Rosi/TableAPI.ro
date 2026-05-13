@@ -283,9 +283,13 @@ tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leq
 --   type List Pi z#24
 --   was expected to be List Pi z#69
 
--- sortByColumns : Table (((Const Nat)* cs) + rr) -> (List (Sigma (Labels cs))) -> Bool -> Table (((Const Nat)* cs) + rr)
+-- -- TODO make github issue
+-- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
+
+-- sortByColumns : Table r -> List (Sigma (Leq* r)) -> Bool -> Table r
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
 -- ## Aggregate
 
@@ -577,7 +581,6 @@ pivotLonger :
         => Table r1 -> Pi (Labels cs) -> Table r2
 pivotLonger = \t cs.
                     selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
-
 
 -- PivotWider helpers
 partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
