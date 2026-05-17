@@ -287,7 +287,7 @@ tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leq
 -- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
-
+-- Alternate version requiring the leq functions to be passed in, but not requiring the columns to be `Nat`
 -- sortByColumns : Table r -> List (Sigma (Leq* r)) -> Bool -> Table r
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
