@@ -359,8 +359,7 @@ partitionWithDict = \key eq t.
 -- [x] `schema(r2)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(r3)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
-groupBy : forall r2.
-  Fold ks =>
+groupBy :
     Table r1 -> Eq K 
       -> (TableRow r1 -> K) -- key
         -> (TableRow r1 -> V) -- project
@@ -384,8 +383,7 @@ groupBy = \t1 eq key project aggregate.
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
 groupByRetentive : {c := K} < r1 => Table r1 -> #c -> Eq K -> Table {'key := K, 'groups := Table r1}
 groupByRetentive = \t1 c eq.
-  let partitioned = partitionWithDict (\r. r.c) eq t1 in
-    map (\p. ('key := p.'1, 'groups := p.'2)) partitioned
+  groupBy t1 eq (.c) id (\key groups. ('key := key, 'groups := groups))
 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
 -- NOTE: Requires extra Eq argument
@@ -402,9 +400,7 @@ groupByRetentive = \t1 c eq.
 
 groupBySubtractive : r2 + {c := K} ~ r1 => Table r1 -> #c -> Eq K -> Table {'key := K, 'groups := Table r2}
 groupBySubtractive = \t1 c eq.
-  let partitioned = partitionWithDict (\r. r.c) eq t1 in
-    map (\p. ('key := p.'1, 'groups := map prj p.'2)) partitioned
-
+  groupBy t1 eq (.c) prj (\key groups. ('key := key, 'groups := groups))
 
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
