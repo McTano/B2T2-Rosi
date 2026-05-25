@@ -36,8 +36,40 @@ values : List (TableRow r) -> Table r
 values = id
 
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
--- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- Requires:
+-- [ ] concat(header(t1), header(t2)) has no duplicates
+-- Ensures:
+-- [ ] schema(t3) is equal to concat(schema(t1), schema(t2))
+-- [ ] nrows(t3) is equal to nrows(t1) * nrows(t2)
+-- Computes the cartesian product of two tables.
+crossJoin : r1 + r2 ~ r3 => Table r1 -> Table r2 -> Table r3
+crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 
+
+-- helpers for leftJoin:
+-- return r2 if it is equal to r1 according to eqs
+match : cs < r1, cs < r2 => Pi r1 -> (Eq (Pi cs)) -> Pi r2 -> Bool
+match = \r1 eqs r2. (eqs (prj r1) (prj r2))
+
+-- in success, map Just over the matching row,
+-- in failure, return nothing Record
+leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Pi (r1 + (Maybe* r2'))
+leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybePi (prj x))
+                                        | 'Nothing: u -> nothingRecord)
+                                            (find (match r1 eqs) t2)
+
+-- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- NOTE: Requires extra Eq argument
+-- ##### Requires:
+-- [x] `header(t3)` is equal to `concat(header(t1), removeAll(header(t2), cs))`
+-- [x] for all `c` in `header(t1)`, `schema(t3)[c]` is equal to `schema(t1)[c]` [modulo use of Maybe]
+-- [x] for all `c` in `removeAll(header(t2), cs))`, `schema(t3)[c]` is equal to `schema(t2)[c]` [modulo use of Maybe]
+-- [ ] `nrows(t3)` is equal to `nrows(t1)`
+leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
+leftJoin = \t1 t2 eqs. foldr
+                              (\r1 a. cons (leftJoinSingle r1 eqs t2) a)
+                              nil
+                              t1
 
 -- ## Properties
 
@@ -45,13 +77,18 @@ values = id
 nrows : Table r -> Nat
 nrows = length
 
-
 -- ### `ncols :: t:Table -> n:Number`
 ncols : Table r -> Nat
 ncols = length
 
 -- ### `header :: t:Table -> cs:Seq<ColName>`
--- PROBLEM: we can't convert labels to strings
+-- Also, without changing the structure of tables, this can't work for empty table
+-- header : Fold r1 => Table r1 -> (List L)
+-- NOTE: We've been representing Seq<ColName> as Pi (Labels cs), so this gives us what we need for
+-- functions that take that input, but doesn't let us treat them as values (I think)
+header : Table r1 -> Pi (Labels r1)
+header = \t1. labelsP
+
 
 -- ## Access Subcomponents
 
@@ -73,100 +110,534 @@ getColumn = \t l. map (\r.  getValue r l) t
 
 -- ## SubTable
 -- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
--- definable
+-- [ ] for all `n` in `ns`, `n` is in `range(nrows(t1))`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(ns)`
+selectRows1 : Table r1 -> List Nat -> Maybe (Table r1)
+selectRows1 = \t1 ns. let matches = filterMaybe (map (nth t1) ns) in if (equal (nrows matches) (length ns))
+                                                                     (Just matches)
+                                                                     Nothing
 
 -- ### (overload 2/2) `selectRows :: t1:Table * bs:Seq<Boolean> -> t2:Table`]
--- definable
+-- [ ] `length(bs)` is equal to `nrows(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(removeAll(bs, [false]))`
+selectRows2 : Table r1 -> List Bool -> Maybe (Table r1)
+selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
+                         (Just (filterMaybe (map (\p. if (p.'2) (Just p.'1) Nothing) (zip t1 bs))))
+                         Nothing
+
 
 -- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
 -- PROBLEM: columns not ordered
 -- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
 -- PROBLEM: columns not ordered
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
-
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [x] `header(t2)` is equal to `cs` 
+-- [x] for all `c` in `header(t2)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
 selectColumns : cs < r1 => Table r1 -> Pi (Labels cs) -> Table cs
 selectColumns = \t1 ls. map prj t1
 
-
 -- more Rosi-like version
-selectColumns2 : r2 < r1 => Table r1 -> Table r2
-selectColumns2 = \t1. map prj t1
+selectColumnsAlt : r2 < r1 => Table r1 -> Table r2
+selectColumnsAlt = \t1. map prj t1
 
 -- ### `head :: t1:Table * n:Number -> t2:Table`
--- ### `distinct :: t1:Table -> t2:Table`
--- ### `dropColumn :: t1:Table * c:ColName -> t2:Table` 
+-- NOTE: had to implement Int type: Int = Sigma {'Plus: Nat, 'Minus: Nat}
+-- NOTE: renamed to `tableHead`
+-- Returns the first `n` rows of the table based on position. For negative values of `n`, this function returns all rows except the last `n` rows.
+-- [ ] if `n` is non-negative then `n` is in `range(nrows(t1))`
+-- [ ] if `n` is negative then `- n` is in `range(nrows(t1))`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] if `n` is non-negative then `nrows(t2)` is equal to `n`
+-- [ ] if `n` is negative then `nrows(t2)` is equal to `nrows(t1) + n`
+tableHead : Table r1 -> Int -> Table r1
+tableHead = \t1.  'Plus: n -> takeN t1 n
+                | 'Minus: n ->
+                  ( 'Zero: u -> nil
+                  | 'Succ: m -> takeN t1 (monus (nrows t1) n)) n
 
+-- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
+tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
+tfilter = \t1 f. filter f t1
+
+-- ### `distinct :: t1:Table -> t2:Table`
+-- Retains only unique/distinct rows from an input `Table`.
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- NOTE: Requires extra Eq argument
+distinct : Table r1 -> Eq (Pi r1) -> Table r1
+distinct = \t1 eq. let ps = (enumerate t1) in (unzip (tfilter ps
+                                                             (\p1. all (\p2. or (equal p1.'2 p2.'2)
+                                                                                (not (eq p1.'1 p2.'1))) ps))).'1
+
+-- ### `dropColumn :: t1:Table * c:ColName -> t2:Table`
 dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
 dropColumn = \t1 l. map prj t1
 
-dropColumn2 : r2 < r1 => Table r1 -> Table r2
-dropColumn2 = \t1. map prj t1
+dropColumnAlt : r2 < r1 => Table r1 -> Table r2
+dropColumnAlt = \t1. map prj t1
+
+
 
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
-
 dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
 dropColumns = \t1 cs. map prj t1
 
 -- Rosi-like version is identical to singular dropColumn because the implicit argument can be one or more tables
-dropColumns2 : r2 < r1 => Table r1 -> Table r2
-dropColumns2 = \t1. map prj t1
+dropColumnsAlt : r2 < r1 => Table r1 -> Table r2
+dropColumnsAlt = dropColumnAlt
+
+-- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
+-- Projects each row of a table to a new table, flattens the resulting tables into one table, and 
+-- invokes a result selector function on each row therein. The index of each source row is used
+-- in the intermediate projected form of that row.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [ ] `n` is in `range(nrows(t1))`
+-- [x] `schema(r2)` is equal to `schema(t1)`
+-- [x] `schema(r3)` is equal to `schema(t2)`
+-- [x] `schema(r4)` is equal to `schema(t3)`
+selectMany : Table r1 -> (Pair (TableRow r1) Nat -> Table r2) -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
+-- selectMany = \t1 project result. map (\r1. (map result (zip r1 (map project (enumerate t1))))) t1
+-- selectMany = \t1 project result. flattenList (map (\r1. result (zip r1 (map project (enumerate t1)))) t1)
+selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.'1 (project p)) (enumerate t1))))
 
 -- ## Ordering
 
--- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
--- TODO: define sorting
--- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
+-- helpers for orderBy
 
+multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Compare (TableRow r)
+multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+                                               | 'Cons: xs -> if (xs.'1.'2 (xs.'1.'1 a) (xs.'1.'1 b))
+                                                                 (if (xs.'1.'2 (xs.'1.'1 b) (xs.'1.'1 a))
+                                                                       (multiCompareAlt xs.'2 a b)
+                                                                     (inj ('Minus := 1)))
+                                                                 (inj ('Plus := 1))) cmps)
+
+multiCompareAlt : List (Leq (TableRow r1)) -> Compare (TableRow r1)
+multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+                                                  | 'Cons: xs -> if (xs.'1 a b)
+                                                                    (if (xs.'1 b a)
+                                                                       (multiCompareAlt xs.'2 a b)
+                                                                       (inj ('Minus := 1)))
+                                                                    (inj ('Plus := 1))) cmps)
+
+-- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
+-- DEPENDS: sorting
+-- PROBLEM: As Toohey paper notes, this function requires existential types to allow K to vary between comparers.
+-- Sorts the rows of a `Table` in ascending order by using a sequence of specified comparers.
+-- NOTE: as implemented, comparers must all use the same K type, but it should be allowed to vary.
+-- `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
+-- [x] `schema(r)` is equal to `schema(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+orderBy : Table r1 -> List (Pair (TableRow r1 -> k) (Leq k)) -> Table r1
+orderBy = \t1 cmps.
+  let cmp = (multiCompare cmps) in
+    sort cmp t1
+
+-- simplified signature for orderByAlt
+orderByAlt : Table r1 -> List (Leq (TableRow r1)) -> Table r1
+orderByAlt = \t1 cmps.
+  let cmp = (multiCompareAlt cmps) in
+    sort cmp t1
+
+-- ### `tsort :: t1:Table * c:ColName * b:Boolean -> t2:Table`
+-- DEPENDS: sorting
+-- Given a `Table` and one of its column names, returns a `Table` with the same rows ordered based on the named column.
+-- If `b` is `true`, the `Table` will be sorted in ascending order, otherwise it will be in descending order.
+-- [x] `c` is in `header(t1)`
+-- [x] `schema(t1)[c]` is `Number`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+tsort : {c := Nat} < r1 => Table r1 -> #c -> Bool -> Table r1
+tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leqN a b)))) nil)
+
+-- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- DEPENDS: sorting
+-- Given a `Table` and a sequence of column names in that `Table`, return a `Table` with the same rows ordered ascendingly
+-- based on the named columns.
+-- [ ] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [x] for all `c` in `cs`, `schema(t1)[c]` is `Number`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- PROBLEM: Can't convince typechecker that r.c must be Nat. See Github issue #28. https://github.com/IowaFP/Rosi/issues/28
+-- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
+
+-- Alternate version requiring the leq functions to be passed in, but not requiring the columns to be `Nat`
+-- sortByColumns : Table r -> List (Sigma (Leq* r)) -> Bool -> Table r
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
 -- ## Aggregate
 
--- ### `count :: t1:Table * c:ColName -> t2:Table`
--- `count` needs to take in a label argument, go through the table and return a table with columns "value" and "count"
+-- helpers for count
 countHelper : {l := v} < r => Table r -> #l -> Eq v -> Dict v Nat
 countHelper = \tb l eq. foldr (\e a. (inc a eq e.l)) emptyDict tb
 
 countDictToTable : Dict v Nat -> Table {'value := v, 'count := Nat}
 countDictToTable = \d. foldr (\e a. cons ('value := e.'1, 'count := e.'2) a) nil d
 
+-- ### `count :: t1:Table * c:ColName -> t2:Table`
+-- NOTE: Requires extra Eq argument
+-- [x] `c` is in `header(t1)`
+-- [x] `schema(t1)[c]` is a categorical sort
+-- [x] `header(t2)` is equal to `["value", "count"]`
+-- [x] `schema(t2)["value"]` is equal to `schema(t1)[c]`
+-- [x] `schema(t2)["count"]` is equal to `Number`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
+
 count : {l := v} < r => Table r -> #l -> Eq v -> Table {'value := v, 'count := Nat}
 count = \tb l eq. countDictToTable (countHelper tb l eq)
 
-
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
+-- TODO
+-- DEPENDS: implement some arithmetic
+-- Groups the values of a numeric column into bins. The parameter `n` specifies the bin width.
+-- This function is useful in creating histograms and converting continuous random variables
+-- to categorical ones.
+-- [ ] `c` is in `header(t1)`
+-- [ ] `schema(t1)[c]` is `Number`
+-- [ ] `header(t2)` is equal to `["group", "count"]`
+-- [ ] `schema(t2)["group"]` is `String`
+-- [ ] `schema(t2)["count"]` is `Number`
+
+
+-- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
+-- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
+-- i.e. Pi {l := r1.l -> r2.l}
+-- ^ Rereading the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in Pottiers and Remy 2005
+-- i.e. we would like to express that some property holds for each {l := v} in a record.
+-- Questions for Garrett:
+-- 1. can we support this in our system?
+-- 2. Can existentials help us express this?
+-- 3. would something like Toohey et al.'s `All` constraint let us do this?
+-- 4. Could we add something to our system that would let us support this, and would it threaten the nice properties of our theory?
+
+addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
+addToPartition = \d eq k v. sorry
+
+partitionDict : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
+partitionDict = \key eq t inputColumn.
+  foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
+
+
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
+-- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
+-- of `agg` specifies the output column, the input column, and the function that compute the 
+-- summarizing value (e.g. average, sum, and count).
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
+-- [x] `ci2` is in `header(t1)`
+-- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
+
+-- PROBLEM: Currently this produces an error which states that the predicate `{inputColumn := v1} < r1` does not imply itself. May require a fix to Rosi.
+-- Other attempts produced other interesting errors in Rosi. See Issues #29 and #30 on the Rosi repo. https://github.com/IowaFP/Rosi/issues
+-- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
+-- pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
+--   let partitioned = partitionDict (\r. r.groupColumn) eq t1 inputColumn in
+--       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
+
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
-
-
--- ## Missing Values
-
--- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
--- ### `dropna :: t1:Table -> t2:Table`
--- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
-
-
--- ## Data Cleaning
-
--- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
--- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
+-- Groups the rows of a table according to a specified key selector function and creates a result 
+-- value from each group and its key. The rows of each group are projected by using a specified function.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `schema(r2)` is equal to `schema(t1)`
+-- [x] `schema(t2)` is equal to `schema(r3)`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
+-- NOTE: K is fixed to be a column name. Reimplementing this with Dict instead of intermediate partition could allow K to be generic.
+groupBy : forall r2. Fold ks
+  => Table r1 
+    -> (TableRow r1 -> Sigma (Labels ks))
+      -> (TableRow r1 -> v)
+        -> (Sigma (Labels ks) -> List v -> TableRow r2) -> Table r2
+groupBy = /\r2: R[*]. \t1 key project aggregate.
+  let partitioned = partition key t1 in
+    (let projected = projectPartition partitioned project  in
+      (let aggregated = aggregatePartition projected aggregate in
+        fold #(Const (Pi r2)) (\l x. cons x nil) vcat nil aggregated))
 
 
 -- ## Utilities
 
--- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
--- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
--- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
--- ### `find :: t:Table * r:Row -> n:Error<Number>`
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
--- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
--- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
--- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
+-- TODO
+-- NOTE: Requires extra Eq argument
+-- Categorizes rows of the input table into groups by the key of each row. The key is computed by accessing the named column.
+-- [ ] `c` is in `header(t1)`
+-- [ ] `schema(t1)[c]` is a categorical sort
+-- [ ] `header(t2)` is equal to `["key", "groups"]`
+-- [ ] `schema(t2)["key"]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)["groups"]` is `Table`
+-- [ ] `getColumn(t2, "key")` has no duplicates
+-- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
+groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r1}
+groupByRetentive = \t1 c eq. sorry 
 
-select : Table r1 -> (Pair (TableRow r1) Nat -> TableRow r2) -> Table r2
+-- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
+-- TODO
+-- NOTE: Requires extra Eq argument
+-- Similar to `groupByRetentive` but the named column is removed in the output.
+-- [ ] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort
+-- [ ] `ci2` is in `header(t1)`
+-- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- [ ] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- [ ] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
+groupBySubtractive : r2 + {c := T} ~ r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r2}
+groupBySubtractive = \t1 c eq. sorry
+
+
+-- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
+-- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
+-- Consumes an existing `Table` and produces a new `Table` with the named columns updated, using `f`
+--  to produce the values for those columns, once for each row.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `header(t2)` is equal to `header(t1)` [NOTE: confirm this produces a type error]
+-- [x] for all `c` in `header(t2)`
+--   [x] if `c` in `header(r2)` then `schema(t2)[c]` is equal to `schema(r2)[c]` [schema(r2) and schema(t2) are necessarily identical]
+--   [x] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+update : Labels t1 ~ Labels t2, r2 < t2, t2 - r2 < t1 => Table t1 -> ((TableRow t1) -> (TableRow r2)) -> Table t2
+update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
+
+
+-- ### `flatten :: t1:Table * cs:Seq<ColName> -> t2:Table`
+-- When columns `cs` of table `t` have sequences, returns a `Table` where each element of each `c` 
+-- in `cs` is flattened, meaning the column corresponding to `c` becomes a longer column where the
+-- original entries are concatenated. If all sequences to be flattened are empty, the behavior is
+-- unspecified. Elements of row `i` of `t` in columns other than `cs` will be repeated according 
+-- to the length of `getValue(getRow(t1, i), c1)`. These lengths must therefore be the same for 
+-- each `c` in `cs`.
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is `Seq<X>` for some sort `X`
+-- [ ] for all `i` in `range(nrows(t1))`, for all `c1` and `c2` in `cs`, `length(getValue(getRow(t1, i), c1))` is equal to `length(getValue(getRow(t1, i), c2))`
+-- [ ] `header(t2)` is equal to `header(t1)`
+-- [ ] for all `c` in `header(t2)`
+--   [1] if `c` is in `cs` then `schema(t2)[c]` is equal to the element sort of `schema(t1)[c]`
+--   [ ] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
+flatten : Fold cs, (List* cs) + r' ~ r1, cs + r' ~ r2 => Table r1 -> Pi (Labels cs) -> Table r2
+flatten = \t1 cs. flattenList (map (\r1. crossJoin (cons (prj r1) nil) (transposeColumns (getListColumns cs r1))) t1)
+
+
+-- generalizes transformColumn and renameColumn
+transformAndRenameColumn : r + {l1 := v1} ~ r1, r + {l2 := v2} ~ r2 => Table r1 -> #l1 -> #l2 -> (v1 -> v2) -> Table r2
+transformAndRenameColumn = \t1 l1 l2 f. map (\r1. (prj r1) ++ (l2 := f r1.l1)) t1
+
+-- ### `transformColumn :: t1:Table * c:ColName * f:(v1:Value -> v2:Value) -> t2:Table`
+-- Consumes a `Table`, a `ColName` representing a column name, and a transformation 
+-- function and produces a new `Table` where the transformation function has been 
+-- applied to all values in the named column.
+-- [x] `c` is in `header(t1)`
+-- [x] `v1` is of sort `schema(t1)[c]`
+-- [x] `header(t2)` is equal to `header(t1)`
+-- for all `c'` in `header(t2)`,
+--     [x] if `c'` is equal to `c` then `schema(t2)[c']` is equal to the sort of `v2`
+--     [x] otherwise, then `schema(t2)[c']` is equal to `schema(t1)[c']`
+--     [ ] `nrows(t2)` is equal to `nrows(t1)`
+transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 => Table r1 -> #l -> (v1 -> v2) -> Table r2
+transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
+
+-- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
+-- PROBLEM: Typing multiple renames is hard because we need to somehow map labels to labels
+-- NOTE: can only define for single column for now
+--  [x] `c1i` is in `header(t1)` for all `i`
+--  [ ] `[c11 ... c1n]` has no duplicates
+--  [ ] `concat(removeAll(header(t1), [c11 ... c1n]), [c21 ... c2n])` has no duplicates
+--  [ ] `header(t2)` is equal to `header(t1)` with all `c1i` replaced with `c2i`
+--  for all `c` in `header(t2)`,
+--     [ ] if `c` is equal to `c2i` for some `i` then `schema(t2)[c2i]` is equal to `schema(t1)[c1i]`
+--     [ ] otherwise, `schema(t2)[c]` is equal to `schema(t2)[c]`
+--  [ ] `nrows(t2)` is equal to `nrows(t1)`
+renameColumn : r + {l1 := v} ~ r1, r + {l2 := v} ~ r2 => Table r1 -> #l1 -> #l2 -> Table r2
+renameColumn = \t1 l1 l2. transformAndRenameColumn t1 l1 l2 id
+
+-- ### `find :: t:Table * r:Row -> n:Error<Number>`
+-- NOTE: renamed to `findRow`
+-- NOTE: Returns Nothing in the case of failure. The spec specifies it should return error("not found")
+-- but this isn't used anywhere else
+-- NOTE: Requires extra Eq argument
+-- [x] for all `c` in `header(r)`, `c` is in `header(t)`
+-- [x] for all `c` in `header(r)`, `schema(r)[c]` is equal to `schema(t)[c]`
+-- [ ] either `n` is equal to `error("not found")` or `n` is in `range(nrows(t))`
+findRow : Table r1 -> Eq (Pi r1) -> TableRow r1 -> Maybe Nat
+findRow = \t1 eqs r1. findIndex (eqs r1) t1
+
+
+-- ### `select :: t1:Table * f:(r1:Row * n:Number -> r2:Row) -> t2:Table`
+-- Projects each `Row` of a `Table` into a new `Table`.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [ ] `n` is in `range(nrows(t1))`
+-- [x] `schema(t2)` is equal to `schema(r2)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+select : Table r1 -> (Pair (Pi r1) Nat -> TableRow r2) -> Table r2
 select = \t1 f. map f (enumerate t1)
 
--- ### `selectMany :: t1:Table * project:(r1:Row * n:Number -> t2:Table) * result:(r2:Row * r3:Row -> r4:Row) -> t3:Table`
 -- ### `groupJoin<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * aggregate:(r3:Row * t3:Table -> r4:Row) -> t4:Table`
+-- Correlates the rows of two tables based on equality of keys and groups the results.
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `schema(r2)` is equal to `schema(t2)`
+-- [x] `schema(r3)` is equal to `schema(t1)`
+-- [x] `schema(t3)` is equal to `schema(t2)`
+-- [x] `schema(t4)` is equal to `schema(r4)`
+-- [ ] `nrows(t4)` is equal to `nrows(t1)`
+groupJoin : Table r1 -> Table r2 -> (TableRow r1 -> k) -> (TableRow r2 -> k) -> Eq k -> (TableRow r1 -> Table r2 -> TableRow r3) -> Table r3
+groupJoin = \t1 t2 getKey1 getKey2 eq aggregate.
+                select t1 (\p. aggregate p.'1 (tfilter t2 (\r2. eq (getKey1 p.'1) (getKey2 r2))))
+
 -- ### `join<K> :: t1:Table * t2:Table * getKey1:(r1:Row -> k1:K) * getKey2:(r2:Row -> k2:K) * combine:(r3:Row * r4:Row -> r5:Row) -> t3:Table`
+-- [x] `schema(r1)` is equal to `schema(t1)`
+-- [x] `schema(r2)` is equal to `schema(t2)`
+-- [x] `schema(r3)` is equal to `schema(t1)`
+-- [x] `schema(r4)` is equal to `schema(t2)`
+-- [x] `schema(t3)` is equal to `schema(r5)`
+join : Table r1 -> Table r2 -> (TableRow r1 -> k) -> (TableRow r2 -> k) -> Eq k -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
+join = \t1 t2 getKey1 getKey2 eq combine.
+            selectMany t1 (\p. let r1 = p.'1 in (let k = getKey1 r1 in (tfilter t2 (\r2. eq (getKey2 r2) k)))) combine
+
+-- ## Missing Values
+
+-- ### `completeCases :: t:Table * c:ColName -> bs:Seq<Boolean>`
+completeCases : {l := v} < r1 => Table (Maybe* r1) -> #l -> List Bool
+completeCases = \t1 l. map (\r. isJust (r.l)) t1
+
+-- ### `dropna :: t1:Table -> t2:Table`
+-- PROBLEM: Not sure if I can do this when only some rows Maybe typed.
+-- NOTE: This is probably a place where the split constraint is useful.
+-- NOTE: When all rows are Maybe, I find myself reaching for something equivalent to an `All` constraint.
+--       but I don't actually need it here.
+--       Table (Maybe* r) works when i use it directly as a type, but I can't get it to typecheck if I try to
+--       make it a constraint, like r' ~ (Maybe* r)
+-- NOTE: We could also define a version that removes the Maybe* from the return type by just omitting `(map liftMaybePi)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- Removes rows that have some values missing
+dropna : Fold r => Table (Maybe* r) -> Table (Maybe* r)
+dropna = (map liftMaybePi) . filterMaybe . (map unliftMaybePiPi)
+
+-- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
+-- Scans the named column and fills in `v` when a cell is missing value.
+-- [x] `c` is in `header(t1)`
+-- [x] `v` is of sort `schema(t1)[c]`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+fillna : {c := Maybe v} < r1 => Table r1 -> #c -> v -> Table r1 
+fillna = \t1 c v. transformColumn t1 c (maybe (Just v) Just)
+
+-- ## Data Cleaning
+
+-- helpers for pivotLonger
+pcHelper : {l := T} < r => Pi (Labels cs) -> #l -> T -> Table {'key := Sigma (Labels r), 'value := Sigma r}
+pcHelper = \cs l x. cons ('key := inj (l := tt), 'value := inj (l := x)) emptyTable
+
+splitCs : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pair (Pi cs) (Pi rr)
+splitCs = \r1 cs. pair (prj r1) (prj r1)
+
+removeAll : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pi rr
+removeAll = \r1 cs. prj r1
+
+removeAllAlt : cs + rr ~ r1 => Pi r1 -> Pi rr
+removeAllAlt = \r1. prj r1
+
+projectColumns : Fold r1, Fold cs, cs < r1 => TableRow r1 -> Pi (Labels cs) -> Table {'key := Sigma (Labels cs), 'value := Sigma cs}
+projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).'1
+
+-- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
+-- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
+-- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
+-- NOTE: split constraint might be useful here.
+-- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
+--       (see InterestingFoldExample.ro)
+-- Reshapes the input table and make it longer. The data kept in the named columns are moved to
+-- two new columns, one for the column names and the other for the cell values.
+-- [ ] `length(cs)` is positive
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t1)[cs[0]]`
+-- [x] `concat(removeAll(header(t1), cs), [c1, c2])` has no duplicates
+-- [x] `header(t2)` is equal to `concat(removeAll(header(t1), cs), [c1, c2])`
+-- [x] for all `c` in `removeAll(header(t1), cs)`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [~] `schema(t2)[c1]` is equal to `ColName` [as Sigma (Labels cs)]
+-- [ ] `schema(t2)[c2]` is equal to `schema(t1)[cs[0]]`
+pivotLonger :
+  Fold r1, Fold cs,
+    rr + cs ~ r1, rr + {'key := Sigma (Labels cs), 'value := Sigma cs} ~ r2
+        => Table r1 -> Pi (Labels cs) -> Table r2
+pivotLonger = \t cs.
+                    selectMany t (\p. projectColumns p.'1) (\p. (prj p.'1) ++ (p.'2))
+
+-- PivotWider helpers
+partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
+partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
+
+-- check if the key stored in the sum at l2 is equal to l1
+labelPredicate :
+  {l1 := Unit} < (Labels cs),
+  {l2 := Sigma (Labels cs)} < r
+  => #l1 -> #l2 -> Pi r -> Bool
+labelPredicate =
+  \l1 l2 r. (case l1 (\u. True) | (\u. False)) r.l2
+
+findValue :
+  {l := Unit} < (Labels cs)
+  => #l -> List Pi {'key := Sigma (Labels cs), 'value := T} -> Maybe T
+findValue = \l rows. maybe Nothing (\r. Just r.'value) (find (labelPredicate l 'key) rows)
+
+-- build row over cs, with value set to the value in the row matching that label, if it exists.
+-- to build this row, could fold over the list with an accumulator Pi (Const(Maybe t))* rk
+-- for each row, overwrite the value in the corresponding column according to the case of Sigma cs
+type Equivs : R[*] -> R[*] -> * -> *
+type Equivs = \rr cs T. Pi {'shared := Pi rr, 'rows := List (Pi {'key := Sigma (Labels cs), 'value := T})}
+
+synthOne :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+    rr + ((Const (Maybe T))* cs) ~ r2
+    => Equivs rr cs T -> Pi r2
+synthOne =
+  /\T:*. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
+
+synthFromEquivs :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+    rr + ((Const (Maybe T))* cs) ~ r2
+    => List (Equivs rr cs T) -> List (Pi r2)
+synthFromEquivs =
+  \equivs. (map synthOne equivs)
+
+getEquivs :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1 =>
+  List (Pi r1) -> Eq (Pi rr) -> List (Equivs rr cs T)
+getEquivs = \t1 eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (partialEquality eq r))))) t1
+
+-- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
+-- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
+-- The inverse of `pivotLonger`.
+-- NOTE: based on the example in the Toohey 2026.
+-- NOTE: requires extra Eq argument
+-- [x] `c1` is in `header(t1)`
+-- [x] `c2` is in `header(t1)`
+-- [x] `schema(t1)[c1]` is `ColName` [Sigma (Labels cs)]
+-- [x] `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))` has no duplicates
+-- [x] `header(t2)` is equal to `concat(removeAll(header(t1), [c1, c2]), removeDuplicates(getColumn(t1, c1)))`
+-- [x] for all `c` in `removeAll(header(t1), [c1, c2])`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] for all `c` in `removeDuplicates(getColumn(t1, c1))`, `schema(t2)[c]` is equal to `schema(t1)[c2]`
+pivotWider :
+  {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,
+  rr + ((Const (Maybe T))* cs) ~ r2
+          => Table r1 -> Eq (Pi rr) -> Pi (Labels cs) -> Table r2
+pivotWider = \t1 eq cs.
+                -- get all the rows which are distinct except for the values at 'key and 'value.
+                  let uniqs = distinct t1 (partialEquality eq) in
+                -- select all rows equal to that row except at 'key and 'value
+                            synthFromEquivs (getEquivs uniqs eq)
 

@@ -1,15 +1,57 @@
 import Ro.Base
 import TableAPI, ExampleTables
 
+-- built-ins
+nrowsExample = nrows (cons tt (cons tt nil))
+
+-- Constructors
+type BracesRow : R[*]
+type BracesRow = {'has_braces := Bool }
+
+bracesTable : Table BracesRow
+bracesTable = (cons ('has_braces := True)
+                    (cons ('has_braces := False)
+                           nil))
+
+crossJoinExample : Table (StudentsRow + BracesRow)
+crossJoinExample = crossJoin students bracesTable
+
+type GradesRow : R[*]
+type GradesRow = {'name := String, 'age := Nat, 'quiz1 := Nat, 'quiz2 := Nat, 'midterm := Nat}
+
+grades : Table GradesRow
+grades = cons ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
+              (cons ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
+                    (cons ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+                          nil))
+
+
+leftJoinExample1 = leftJoin students grades (eqP ('name := (~), 'age := equal))
+
+leftJoinExample1Expected = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
+                                (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
+                                      (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
+                                            nil))
+
+leftJoinExample2 = leftJoin studentsWithDupeColors grades (eqP ('name := (~), 'age := equal))
+
+leftJoinExample2Expected = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
+                                 (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
+                                       (cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
+                                             (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
+                                                   (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
+                                                    nil)))))
+
+
 -- we can omit the type annotation for this version
 -- selectColumnsStudents : Table {'name := String, 'favorite_color := String}
 selectColumnsStudents = selectColumns students ('favorite_color := tt, 'name := tt)
 
 -- need type annotation to determine behavior
 -- value with inferred type would be
--- \p TableAPI.selectColumns2 [{'age := Mu (\n : *. Sigma {'Succ := n, 'Zero := Pi {}}), 'favorite_color := String, 'name := String}] [a#44] [VVar 0] (ExampleTables.students)
-selectColumns2Students : Table {'name := String, 'favorite_color := String}
-selectColumns2Students = selectColumns2 students
+-- \p TableAPI.selectColumnsAlt [{'age := Mu (\n : *. Sigma {'Succ := n, 'Zero := Pi {}}), 'favorite_color := String, 'name := String}] [a#44] [VVar 0] (ExampleTables.students)
+selectColumnsAltStudents : Table {'name := String, 'favorite_color := String}
+selectColumnsAltStudents = selectColumnsAlt students
 
 
 selectColumnsStudentsExpected : Table {'name := String, 'favorite_color := String}
@@ -23,8 +65,8 @@ selectColumnsStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
 dropColumnStudents = dropColumn students 'age
 
 -- need type annotation to determine behavior
-dropColumn2Students : Table {'name := String, 'favorite_color := String}
-dropColumn2Students = dropColumn2 students
+dropColumnAltStudents : Table {'name := String, 'favorite_color := String}
+dropColumnAltStudents = dropColumnAlt students
 
 -- dropColumnStudentsExpected : Table {'name := String, 'favorite_color := String}
 dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
@@ -34,8 +76,8 @@ dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
 
 dropColumnsStudents = dropColumns students ('age := tt, 'favorite_color := tt)
 
-dropColumns2Students : Table {'name := String}
-dropColumns2Students = dropColumns2 students
+dropColumnsAltStudents : Table {'name := String}
+dropColumnsAltStudents = dropColumnsAlt students
 
 -- I get an interesting error when I remove this type annotation
 -- dropColumnsStudentsExpected : Table {'name := String}
@@ -45,6 +87,12 @@ dropColumnsStudentsExpected = cons ('name := "Bob")
                                     (cons ('name := "Eve")
                                           nil))
 
+tfilterExample = tfilter studentsWithDupeColors (\r1. or (r1.'favorite_color ~"red") (r1.'name ~ "Alice"))
+tfilterExampleExpected = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
+                               (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
+                                     (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")
+                                           nil)))
+
 selectStudents : Table {'id := Nat, 'name := String}
 selectStudents = select students (\p. (prj p.'1) ++ ('id := p.'2))
 
@@ -53,15 +101,60 @@ selectStudentsExpected = cons ('id := 0, 'name := "Bob")
                               (cons ('id := 2, 'name := "Eve")
                                           nil))
 
-studentsWithDupeColors : StudentsTable
-studentsWithDupeColors = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
-                                                     (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green")
-                                                            students))
+-- Aggregate
+studentsFavoriteColorsAsDict = countHelper studentsWithDupeColors 'favorite_color (~)
 
-countStudentsFavoriteColor = count studentsWithDupeColors 'favorite_color (~)
+getDictSuccess = getD studentsFavoriteColorsAsDict (~) "red"
+getDictFailure = getD studentsFavoriteColorsAsDict (~) "pink"
 
-countStudentsFavoriteColorExpected : Table {'value := String, 'count := Nat}
-countStudentsFavoriteColorExpected = (cons ('value := "red", 'count := 2)
+studentsFavoriteColorsAsTable = count studentsWithDupeColors 'favorite_color (~)
+
+studentsFavoriteColorsAsTableExpected : Table {'value := String, 'count := Nat}
+studentsFavoriteColorsAsTableExpected = (cons ('value := "red", 'count := 2)
                                           (cons ('value := "green", 'count := 2)
                                                 (cons ('value := "blue", 'count := 2)
                                                       nil)))
+
+--Missing Values
+--Data Cleaning
+
+-- Utilities
+-- type annotation on f and at top level needed
+-- updateExample1 : StudentsTable
+updateExample1 = update students (\r1: TableRow StudentsRow. ('name := "Mud"))
+
+-- updateExample2 : Table {'name := String, 'age := String, 'favorite_color := String}
+updateExample2 = update students (\r1. ('age := r1.'name))
+
+-- An example this simple can be handled without an annotation.
+updateExample3 = update students id
+updateExample4 = update students (\r1: TableRow StudentsRow. ('age := r1.'name))
+
+-- Printing
+
+type ExampleRow : R[*]
+type ExampleRow = {'Left := String, 'Right := String}
+
+type VariantType : *
+type VariantType = Sigma ExampleRow
+
+concreteVariant : VariantType
+concreteVariant = inj ('Left := "Bob")
+
+concreteVariantInList : List VariantType
+concreteVariantInList = cons concreteVariant nil
+
+l'' : #'Example
+l'' = 'Example
+
+labeledWithVar : Sigma {'Example := String}
+labeledWithVar = inj (l'' := "Basketball")
+
+labeledWithVarViaCon : Sigma {'Example := String}
+labeledWithVarViaCon = con l'' "Basketball"
+
+labeledWithShorthand : Sigma {'Example := String}
+labeledWithShorthand = 'Example: "Basketball"
+
+labeledWithShorthandVar : Sigma {'Example := String}
+labeledWithShorthandVar = l'': "Basketball"
