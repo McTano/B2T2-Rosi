@@ -345,6 +345,13 @@ pivotPartitionHelper = \key eq t inputColumn.
 --   let partitioned = pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn in
 --       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
 
+
+--helpers for groupBy
+partitionWithDict : (TableRow r -> K) -> (Eq K) -> Table r -> Dict K (Table r)
+partitionWithDict = \key eq t.
+  foldr (\r a. addToPartition a eq (key r) r ) emptyDict t
+
+
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
 -- value from each group and its key. The rows of each group are projected by using a specified function.
@@ -352,25 +359,18 @@ pivotPartitionHelper = \key eq t inputColumn.
 -- [x] `schema(r2)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(r3)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
--- NOTE: K is fixed to be a column name. Reimplementing this with Dict instead of intermediate partition could allow K to be generic.
-groupBy : forall r2. Fold ks
-  => Table r1 
-    -> (TableRow r1 -> Sigma (Labels ks))
-      -> (TableRow r1 -> v)
-        -> (Sigma (Labels ks) -> List v -> TableRow r2) -> Table r2
-groupBy = /\r2: R[*]. \t1 key project aggregate.
-  let partitioned = partition key t1 in
-    (let projected = projectPartition partitioned project  in
-      (let aggregated = aggregatePartition projected aggregate in
-        fold #(Const (Pi r2)) (\l x. cons x nil) vcat nil aggregated))
-
---helpers for groupBy
-partitionWithDict : (TableRow r -> K) -> (Eq K) -> Table r -> Dict K (Table r)
-partitionWithDict = \key eq t.
-  foldr (\r a. addToPartition a eq (key r) r ) emptyDict t
+groupBy : forall r2.
+  Fold ks =>
+    Table r1 -> Eq K 
+      -> (TableRow r1 -> K) -- key
+        -> (TableRow r1 -> V) -- project
+        -> (K -> List V -> TableRow r2) -- aggregate
+          -> Table r2
+groupBy = \t1 eq key project aggregate.
+  let partitioned = partitionWithDict key eq t1 in
+    map (\p. aggregate p.'1 (map project p.'2)) partitioned
 
 -- ## Utilities
-
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
 -- NOTE: Requires extra Eq argument
 -- Categorizes rows of the input table into groups by the key of each row. The key is computed by accessing the named column.
