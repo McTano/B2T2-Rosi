@@ -575,7 +575,7 @@ pivotLonger :
     rr + cs ~ r1, rr + {'key := Sigma (Labels cs), 'value := Sigma cs} ~ r2
         => Table r1 -> Pi (Labels cs) -> Table r2
 pivotLonger = \t cs.
-                    selectMany t (\p. projectColumns p.'1) (\p. (prj p.'1) ++ (p.'2))
+                    selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
 
 -- PivotWider helpers
 partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
