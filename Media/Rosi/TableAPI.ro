@@ -392,12 +392,12 @@ groupByRetentive = \t1 c eq.
 -- Similar to `groupByRetentive` but the named column is removed in the output.
 -- [x] `c` is in `header(t1)`
 -- [ ] `schema(t1)[c]` is a categorical sort
--- [ ] `header(t2)` is equal to `["key", "groups"]`
--- [ ] `schema(t2)["key"]` is equal to `schema(t1)[c]`
--- [ ] `schema(t2)["groups"]` is `Table`
+-- [x] `header(t2)` is equal to `["key", "groups"]`
+-- [x] `schema(t2)["key"]` is equal to `schema(t1)[c]`
+-- [x] `schema(t2)["groups"]` is `Table`
 -- [ ] `getColumn(t2, "key")` has no duplicates
--- [ ] for all `t` in `getColumn(t2, "groups")`, `header(t)` is equal to `removeAll(header(t1), [c])`
--- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is a subsequence of `schema(t1)`
+-- [x] for all `t` in `getColumn(t2, "groups")`, `header(t)` is equal to `removeAll(header(t1), [c])`
+-- [x] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is a subsequence of `schema(t1)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
 
 groupBySubtractive : r2 + {c := K} ~ r1 => Table r1 -> #c -> Eq K -> Table {'key := K, 'groups := Table r2}
