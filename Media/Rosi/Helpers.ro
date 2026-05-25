@@ -13,8 +13,21 @@ type Int = Sigma {'Plus := Nat, 'Minus := Nat}
 type Leq : * -> *
 type Leq = \a. (a -> a -> Bool)
 
+type Cmp : *
+type Cmp = Sigma {'Greater := Unit, 'Less := Unit, 'Equal := Unit}
+
+Greater: Cmp
+Greater = 'Greater: tt
+
+Less: Cmp
+Less = 'Less: tt
+
+Equal: Cmp
+Equal = 'Equal: tt
+
+
 type Compare : * -> *
-type Compare = \a. (a -> a -> Int)
+type Compare = \a. (a -> a -> Cmp)
 
 --------------------------------------------------------------------------------
 -- Nat utils
@@ -26,10 +39,24 @@ leqN = fix (\leqN. ( 'Zero: u -> (const True)
                                   | 'Succ: b' -> leqN a' b')))
 
 compN : Compare Nat
-compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> ('Plus: 0)
-                                   | 'Succ: b' -> ('Plus: 1))
-                     | 'Succ: a' -> ( 'Zero: u -> ('Minus: 1)
+compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> Equal
+                                   | 'Succ: b' -> Less)
+                     | 'Succ: a' -> ( 'Zero: u -> Greater
                                     | 'Succ: b' -> compN a' b')))
+
+divMod : Nat -> Nat -> Pair Nat Nat
+divMod = fix (\divMod n1 n2. 
+              ((( 'Equal: u -> (pair 1 0)
+               | 'Less: u -> (pair 0 n1)
+               | 'Greater: u -> (if (equal (monus n1 n2) 0)
+                                 (pair 0 n1)
+                                 ((\p. pair (add p.'1 1) p.'2) (divMod (monus n1 n2) n2)))))
+              (compN n1 n2)))
+
+testDivMod1 = divMod 3 5
+testDivMod2 = divMod 8 5
+testDivMod3 = divMod 12 3
+testDivMod4 = divMod 20 3
 
 
 --------------------------------------------------------------------------------

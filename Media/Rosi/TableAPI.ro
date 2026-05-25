@@ -209,20 +209,20 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 -- helpers for orderBy
 
 multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Compare (TableRow r)
-multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
                                                | 'Cons: xs -> if (xs.'1.'2 (xs.'1.'1 a) (xs.'1.'1 b))
                                                                  (if (xs.'1.'2 (xs.'1.'1 b) (xs.'1.'1 a))
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                     (inj ('Minus := 1)))
-                                                                 (inj ('Plus := 1))) cmps)
+                                                                     (inj Less))
+                                                                 (inj Greater)) cmps)
 
 multiCompareAlt : List (Leq (TableRow r1)) -> Compare (TableRow r1)
-multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
                                                   | 'Cons: xs -> if (xs.'1 a b)
                                                                     (if (xs.'1 b a)
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                       (inj ('Minus := 1)))
-                                                                    (inj ('Plus := 1))) cmps)
+                                                                       (inj Less))
+                                                                    (inj Greater)) cmps)
 
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- DEPENDS: sorting
