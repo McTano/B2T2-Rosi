@@ -264,26 +264,7 @@ tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leq
 -- [x] for all `c` in `cs`, `schema(t1)[c]` is `Number`
 -- [ ] `nrows(t2)` is equal to `nrows(t1)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
--- PROBLEM: Can't infer the predicate needed to select r.c as Nat:
--- The predicate {l := Nat} < r1 is not entailed by 
--- {l := u} < (\y : *. Unit) cs, (\y : *. Nat) cs < r1, (\y : *. Unit) cs < (\y : *. Unit) r1
--- either need to support the inference from `{c := u} < (\y : *. Unit) cs, ((Const Nat)* cs) < r1` to `{c := Nat} < r1`
--- or have an explict `All` constraint a la Toohey
--- either need to support the inference from ((Const Nat)* cs) < r1 to {c := Nat} < r1
--- or have an explict All constraint a la Toohey
-
--- sortByColumns : ((Const Nat)* cs) < r1 => Table r1 -> (List (Sigma (Labels cs))) -> Bool -> Table r1
--- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #Id (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
-
--- Reworking it to use (((Const Nat)* cs) + rr) in place of r1 changes the error to
--- While checking the term TableAPI.orderBy t1
--- While checking the term t1
--- While comparing the types List Pi z#24 and List Pi z#69
---   Type mismatch in functional dependencies for List Pi z#24 ~ List Pi z#69
---   type List Pi z#24
---   was expected to be List Pi z#69
-
--- -- TODO make github issue
+-- PROBLEM: Can't convince typechecker that r.c must be Nat. See Github issue #28. https://github.com/IowaFP/Rosi/issues/28
 -- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
 
@@ -328,13 +309,21 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
 -- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
 -- i.e. Pi {l := r1.l -> r2.l}
--- ^ Rereading the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in 
+-- ^ Rereading the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in Pottiers and Remy 2005
 -- i.e. we would like to express that some property holds for each {l := v} in a record.
 -- Questions for Garrett:
 -- 1. can we support this in our system?
 -- 2. Can existentials help us express this?
 -- 3. would something like Toohey et al.'s `All` constraint let us do this?
 -- 4. Could we add something to our system that would let us support this, and would it threaten the nice properties of our theory?
+
+addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
+addToPartition = \d eq k v. sorry
+
+partitionDict : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
+partitionDict = \key eq t inputColumn.
+  foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
+
 
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
 -- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
@@ -349,8 +338,13 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
 -- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
-pivotTable : {c1 := v1} < r1, {c1 := v1} + {c2 := v2} ~ r2  => Table r1 -> #c2 -> #c1 -> (v1 -> v2) -> Table r2
-pivotTable = \t1 c2 c1 agg. map (\r. (c1 := r.c1, c2 := agg r.c1)) t1
+
+-- PROBLEM: Currently this produces an error which states that the predicate `{inputColumn := v1} < r1` does not imply itself. May require a fix to Rosi.
+-- Other attempts produced other interesting errors in Rosi. See Issues #29 and #30 on the Rosi repo. https://github.com/IowaFP/Rosi/issues
+-- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
+-- pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
+--   let partitioned = partitionDict (\r. r.groupColumn) eq t1 inputColumn in
+--       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
@@ -359,9 +353,10 @@ pivotTable = \t1 c2 c1 agg. map (\r. (c1 := r.c1, c2 := agg r.c1)) t1
 -- [x] `schema(r2)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(r3)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
+-- NOTE: K is fixed to be a column name. Reimplementing this with Dict instead of intermediate partition could allow K to be generic.
 groupBy : forall r2. Fold ks
   => Table r1 
-    -> (TableRow r1 -> Sigma (Labels ks)) 
+    -> (TableRow r1 -> Sigma (Labels ks))
       -> (TableRow r1 -> v)
         -> (Sigma (Labels ks) -> List v -> TableRow r2) -> Table r2
 groupBy = /\r2: R[*]. \t1 key project aggregate.
@@ -580,7 +575,7 @@ pivotLonger :
     rr + cs ~ r1, rr + {'key := Sigma (Labels cs), 'value := Sigma cs} ~ r2
         => Table r1 -> Pi (Labels cs) -> Table r2
 pivotLonger = \t cs.
-                    selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
+                    selectMany t (\p. projectColumns p.'1) (\p. (prj p.'1) ++ (p.'2))
 
 -- PivotWider helpers
 partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
