@@ -38,13 +38,17 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers
 # cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
 # -e emptyDict,dict,get1,get2,get3,getMissing,getEmpty,set1,set2,set3,setMissing,setEmpty,inc1,inc2,inc3,incMissing,incEmpty,nothingRecordExample,nothingRecordExampleExpected,eqPExample,nothingRecordPrj
 
+# nat helpers
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
+# -e testDivMod1,testDivMod2,testDivMod3,testDivMod4
+
 # nonempty list examples
-cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
--e nonEmptyExample1,nonEmptyExample2,nonEmptyPiExample1,nonEmptyPiExample2,transposeColumnsExample1,transposeColumnsExample2
+# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers \
+# -e nonEmptyExample1,nonEmptyExample2,nonEmptyPiExample1,nonEmptyPiExample2,transposeColumnsExample1,transposeColumnsExample2
 
 # aggregate
-# cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
-# -e countFavoriteNumber,falseVal,studentsFavoriteColorsAsTable,studentsFavoriteColorsAsTableExpected
+cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e countFavoriteNumber,falseVal,studentsFavoriteColorsAsTable,studentsFavoriteColorsAsTableExpected,binExample
 
 # test printing
 

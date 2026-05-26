@@ -129,9 +129,9 @@ selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
 
 
 -- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
--- PROBLEM: columns not ordered
+-- PROBLEM: columns not ordered. requires dependent types to determine output type
 -- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
--- PROBLEM: columns not ordered
+-- PROBLEM: columns not ordered. requires dependent types to determine output type
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- [x] `cs` has no duplicates
 -- [x] for all `c` in `cs`, `c` is in `header(t1)`
@@ -209,20 +209,20 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 -- helpers for orderBy
 
 multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Compare (TableRow r)
-multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
                                                | 'Cons: xs -> if (xs.'1.'2 (xs.'1.'1 a) (xs.'1.'1 b))
                                                                  (if (xs.'1.'2 (xs.'1.'1 b) (xs.'1.'1 a))
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                     (inj ('Minus := 1)))
-                                                                 (inj ('Plus := 1))) cmps)
+                                                                     (inj Less))
+                                                                 (inj Greater)) cmps)
 
 multiCompareAlt : List (Leq (TableRow r1)) -> Compare (TableRow r1)
-multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> ('Plus: 0)
+multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
                                                   | 'Cons: xs -> if (xs.'1 a b)
                                                                     (if (xs.'1 b a)
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                       (inj ('Minus := 1)))
-                                                                    (inj ('Plus := 1))) cmps)
+                                                                       (inj Less))
+                                                                    (inj Greater)) cmps)
 
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- DEPENDS: sorting
@@ -294,16 +294,21 @@ count : {l := v} < r => Table r -> #l -> Eq v -> Table {'value := v, 'count := N
 count = \tb l eq. countDictToTable (countHelper tb l eq)
 
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
--- TODO
--- DEPENDS: implement some arithmetic
+-- NOTE: We can't currently stringify the column name to include in the `group` field as shown in the examples for `bin`.
+--       e.g. "0 <= age < 5" instead of "0 <= value < 5"
+--       However, the spec doesn't explictly require a particular format for the strings in `group`.
 -- Groups the values of a numeric column into bins. The parameter `n` specifies the bin width.
 -- This function is useful in creating histograms and converting continuous random variables
 -- to categorical ones.
--- [ ] `c` is in `header(t1)`
--- [ ] `schema(t1)[c]` is `Number`
--- [ ] `header(t2)` is equal to `["group", "count"]`
--- [ ] `schema(t2)["group"]` is `String`
--- [ ] `schema(t2)["count"]` is `Number`
+-- [x] `c` is in `header(t1)`
+-- [x] `schema(t1)[c]` is `Number`
+-- [x] `header(t2)` is equal to `["group", "count"]`
+-- [x] `schema(t2)["group"]` is `String`
+-- [x] `schema(t2)["count"]` is `Number`
+bin : {c := Nat} < r1 => Table r1 -> #c -> Nat -> Table {'group := String, 'count := Nat}
+bin = \t1 c width.
+  let partitioned = partitionWithDict (\r. div (r.c) width) equal t1
+    in map (\p. ('count := length p.'2, 'group := (showNat (mult p.'1 width)) ^ " <= value < " ^ (showNat (mult (succ p.'1) width)))) partitioned
 
 
 -- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
@@ -317,16 +322,12 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- 3. would something like Toohey et al.'s `All` constraint let us do this?
 -- 4. Could we add something to our system that would let us support this, and would it threaten the nice properties of our theory?
 
-addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
-addToPartition = \d eq k v. sorry
-
-partitionDict : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
-partitionDict = \key eq t inputColumn.
+pivotPartitionHelper : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
+pivotPartitionHelper = \key eq t inputColumn.
   foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
 
-
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
 -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
 -- of `agg` specifies the output column, the input column, and the function that compute the 
 -- summarizing value (e.g. average, sum, and count).
@@ -343,7 +344,7 @@ partitionDict = \key eq t inputColumn.
 -- Other attempts produced other interesting errors in Rosi. See Issues #29 and #30 on the Rosi repo. https://github.com/IowaFP/Rosi/issues
 -- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
 -- pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
---   let partitioned = partitionDict (\r. r.groupColumn) eq t1 inputColumn in
+--   let partitioned = pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn in
 --       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
@@ -353,51 +354,48 @@ partitionDict = \key eq t inputColumn.
 -- [x] `schema(r2)` is equal to `schema(t1)`
 -- [x] `schema(t2)` is equal to `schema(r3)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(ks))`, where `ks` is the results of applying `key` to each row of `t1`. `ks` can be defined with `select` and `getColumn`.
--- NOTE: K is fixed to be a column name. Reimplementing this with Dict instead of intermediate partition could allow K to be generic.
-groupBy : forall r2. Fold ks
-  => Table r1 
-    -> (TableRow r1 -> Sigma (Labels ks))
-      -> (TableRow r1 -> v)
-        -> (Sigma (Labels ks) -> List v -> TableRow r2) -> Table r2
-groupBy = /\r2: R[*]. \t1 key project aggregate.
-  let partitioned = partition key t1 in
-    (let projected = projectPartition partitioned project  in
-      (let aggregated = aggregatePartition projected aggregate in
-        fold #(Const (Pi r2)) (\l x. cons x nil) vcat nil aggregated))
-
+groupBy :
+    Table r1 -> Eq K 
+      -> (TableRow r1 -> K) -- key
+        -> (TableRow r1 -> V) -- project
+        -> (K -> List V -> TableRow r2) -- aggregate
+          -> Table r2
+groupBy = \t1 eq key project aggregate.
+  let partitioned = partitionWithDict key eq t1 in
+    map (\p. aggregate p.'1 (map project p.'2)) partitioned
 
 -- ## Utilities
-
 -- ### `groupByRetentive :: t1:Table * c:ColName -> t2:Table`
--- TODO
 -- NOTE: Requires extra Eq argument
 -- Categorizes rows of the input table into groups by the key of each row. The key is computed by accessing the named column.
--- [ ] `c` is in `header(t1)`
+-- [x] `c` is in `header(t1)`
 -- [ ] `schema(t1)[c]` is a categorical sort
--- [ ] `header(t2)` is equal to `["key", "groups"]`
--- [ ] `schema(t2)["key"]` is equal to `schema(t1)[c]`
--- [ ] `schema(t2)["groups"]` is `Table`
+-- [x] `header(t2)` is equal to `["key", "groups"]`
+-- [x] `schema(t2)["key"]` is equal to `schema(t1)[c]`
+-- [x] `schema(t2)["groups"]` is `Table`
 -- [ ] `getColumn(t2, "key")` has no duplicates
--- [ ] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
+-- [x] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is equal to `schema(t1)`
 -- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
-groupByRetentive : {c := T} < r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r1}
-groupByRetentive = \t1 c eq. sorry 
+groupByRetentive : {c := K} < r1 => Table r1 -> #c -> Eq K -> Table {'key := K, 'groups := Table r1}
+groupByRetentive = \t1 c eq.
+  groupBy t1 eq (.c) id (\key groups. ('key := key, 'groups := groups))
 
 -- ### `groupBySubtractive :: t1:Table * c:ColName -> t2:Table`
--- TODO
 -- NOTE: Requires extra Eq argument
 -- Similar to `groupByRetentive` but the named column is removed in the output.
--- [ ] for all `c` in `cs`, `c` is in `header(t1)`
--- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort
--- [ ] `ci2` is in `header(t1)`
--- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
--- [ ] `fi` consumes `Seq<schema(t1)[ci2]>`
--- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
--- [ ] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
--- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
-groupBySubtractive : r2 + {c := T} ~ r1 => Table r1 -> #c -> Eq T -> Table {'key := T, 'groups := Table r2}
-groupBySubtractive = \t1 c eq. sorry
+-- [x] `c` is in `header(t1)`
+-- [ ] `schema(t1)[c]` is a categorical sort
+-- [x] `header(t2)` is equal to `["key", "groups"]`
+-- [x] `schema(t2)["key"]` is equal to `schema(t1)[c]`
+-- [x] `schema(t2)["groups"]` is `Table`
+-- [ ] `getColumn(t2, "key")` has no duplicates
+-- [x] for all `t` in `getColumn(t2, "groups")`, `header(t)` is equal to `removeAll(header(t1), [c])`
+-- [x] for all `t` in `getColumn(t2, "groups")`, `schema(t)` is a subsequence of `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `length(removeDuplicates(getColumn(t1, c)))`
 
+groupBySubtractive : r2 + {c := K} ~ r1 => Table r1 -> #c -> Eq K -> Table {'key := K, 'groups := Table r2}
+groupBySubtractive = \t1 c eq.
+  groupBy t1 eq (.c) prj (\key groups. ('key := key, 'groups := groups))
 
 -- ### `update :: t1:Table * f:(r1:Row -> r2:Row) -> t2:Table`
 -- NOTE: The following description, is confusingly worded. I believe "named columns" refers to the columns appearing in r2
@@ -451,8 +449,14 @@ transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 => Table r1 -> #l -> (v
 transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
--- PROBLEM: Typing multiple renames is hard because we need to somehow map labels to labels
--- NOTE: can only define for single column for now
+-- PROBLEM: Typing multiple renames is hard because we need to express that a subrow of r1 is relabeled in r2 while
+--          the types remain the same.
+--          The best I can figure out is something like:
+-- renameColumns : r + rr ~ r1, r + rr' ~ r2 => Table r1 -> ((Const (Sigma (Labels rr')))* rr) -> Table r2
+--          This captures that the columns argument maps the labels in rr to the new labels in rr',
+--          but it doesn't express that the type of each relabeled field must be the same in the resulting row.
+--          May be made possible by the same capability discussed in the notes on PivotTable
+-- NOTE: Can only define for single column for now
 --  [x] `c1i` is in `header(t1)` for all `i`
 --  [ ] `[c11 ... c1n]` has no duplicates
 --  [ ] `concat(removeAll(header(t1), [c11 ... c1n]), [c21 ... c2n])` has no duplicates
@@ -558,7 +562,6 @@ projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).
 -- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
 -- NOTE: split constraint might be useful here.
 -- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
---       (see InterestingFoldExample.ro)
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive

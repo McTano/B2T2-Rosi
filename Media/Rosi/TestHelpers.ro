@@ -1,6 +1,13 @@
 import Ro.Base, Data.Nat
 import Helpers
 
+-- Nat helpers
+testDivMod1 = divMod 3 5
+testDivMod2 = divMod 8 5
+testDivMod3 = divMod 12 3
+testDivMod4 = divMod 20 3
+
+
 dict = (cons (pair 1 "One")
              (cons (pair 2 "Two")
                     (cons (pair 3 "Three")

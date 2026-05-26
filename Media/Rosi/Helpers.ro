@@ -13,8 +13,21 @@ type Int = Sigma {'Plus := Nat, 'Minus := Nat}
 type Leq : * -> *
 type Leq = \a. (a -> a -> Bool)
 
+type Cmp : *
+type Cmp = Sigma {'Greater := Unit, 'Less := Unit, 'Equal := Unit}
+
+Greater: Cmp
+Greater = 'Greater: tt
+
+Less: Cmp
+Less = 'Less: tt
+
+Equal: Cmp
+Equal = 'Equal: tt
+
+
 type Compare : * -> *
-type Compare = \a. (a -> a -> Int)
+type Compare = \a. (a -> a -> Cmp)
 
 --------------------------------------------------------------------------------
 -- Nat utils
@@ -26,10 +39,49 @@ leqN = fix (\leqN. ( 'Zero: u -> (const True)
                                   | 'Succ: b' -> leqN a' b')))
 
 compN : Compare Nat
-compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> ('Plus: 0)
-                                   | 'Succ: b' -> ('Plus: 1))
-                     | 'Succ: a' -> ( 'Zero: u -> ('Minus: 1)
+compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> Equal
+                                   | 'Succ: b' -> Less)
+                     | 'Succ: a' -> ( 'Zero: u -> Greater
                                     | 'Succ: b' -> compN a' b')))
+
+divMod : Nat -> Nat -> Pair Nat Nat
+divMod = fix (\divMod n1 n2. 
+              ((( 'Equal: u -> (pair 1 0)
+               | 'Less: u -> (pair 0 n1)
+               | 'Greater: u -> (if (equal (monus n1 n2) 0)
+                                 (pair 0 n1)
+                                 ((\p. pair (add p.'1 1) p.'2) (divMod (monus n1 n2) n2)))))
+              (compN n1 n2)))
+
+div : Nat -> Nat -> Nat
+div = \n1 n2. (divMod n1 n2).'1
+
+mod : Nat -> Nat -> Nat
+mod = \n1 n2. (divMod n1 n2).'2
+
+-- helper for showNat. Should only be used when 0 <= n < 10
+showNatDigit : Nat -> String
+showNatDigit =
+  ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ ( case 'Succ (const "[OOPS, digit > 9]")
+                                                                                                                                                 | case 'Zero (const "10"))
+                                                                                                                                    | case 'Zero (const "9"))
+                                                                                                                       | case 'Zero (const "8"))
+                                                                                                          | case 'Zero (const "8"))
+                                                                                             | case 'Zero (const "7"))
+                                                                                | case 'Zero (const "6"))
+                                                                   | case 'Zero (const "5"))
+                                                      | case 'Zero (const "4"))
+                                         | case 'Zero (const "3"))
+                            | case 'Zero (const "2"))
+                | case 'Zero (const "1"))
+  | case 'Zero (const "0"))
+
+-- converts Nat to base 10 string.
+showNat : Nat -> String
+showNat =
+  fix (\showNat n.
+          let divModResult = (divMod n 10) in (if (equal divModResult.'1 0) "" (showNat divModResult.'1)) ^ (showNatDigit divModResult.'2))
+      
 
 
 --------------------------------------------------------------------------------
@@ -97,9 +149,10 @@ sort = \ls cmp. sorry
 
 
 --------------------------------------------------------------------------------
--- Partition
+-- Partitions as Records
 --------------------------------------------------------------------------------
-
+-- NOTE: I switched to using a Dict for partitions in most cases.
+--       I'm unsure whether there are cases where this is actually better.
 
 type Partition : * -> R[*] -> *
 type Partition = \t ks. Pi ((Const (List t))* ks)
@@ -148,6 +201,16 @@ setD = fix (\setD d eq k v.
 
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
 inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
+
+-- Dict partitions:
+addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
+addToPartition = \d eq k v.
+  let curr = fromMaybe nil (getD d eq k) in
+    setD d eq k (cons v curr)
+
+partitionWithDict : (TableRow r -> K) -> (Eq K) -> Table r -> Dict K (Table r)
+partitionWithDict = \key eq t.
+  foldr (\r a. addToPartition a eq (key r) r ) emptyDict t
 
 --------------------------------------------------------------------------------
 -- Maybe utils
