@@ -327,7 +327,7 @@ pivotPartitionHelper = \key eq t inputColumn.
   foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
 
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
 -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
 -- of `agg` specifies the output column, the input column, and the function that compute the 
 -- summarizing value (e.g. average, sum, and count).
@@ -455,6 +455,7 @@ transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 -- renameColumns : r + rr ~ r1, r + rr' ~ r2 => Table r1 -> ((Const (Sigma (Labels rr')))* rr) -> Table r2
 --          This captures that the columns argument maps the labels in rr to the new labels in rr',
 --          but it doesn't express that the type of each relabeled field must be the same in the resulting row.
+--          May be made possible by the same capability discussed in the notes on PivotTable
 -- NOTE: Can only define for single column for now
 --  [x] `c1i` is in `header(t1)` for all `i`
 --  [ ] `[c11 ... c1n]` has no duplicates
@@ -561,7 +562,6 @@ projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).
 -- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
 -- NOTE: split constraint might be useful here.
 -- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
---       (see InterestingFoldExample.ro)
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
