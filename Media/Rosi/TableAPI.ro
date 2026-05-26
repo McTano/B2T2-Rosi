@@ -449,8 +449,13 @@ transformColumn : r + {l := v1} ~ r1, r + {l := v2} ~ r2 => Table r1 -> #l -> (v
 transformColumn = \t1 l f. transformAndRenameColumn t1 l l f
 
 -- ### `renameColumns :: t1:Table * ccs:Seq<ColName * ColName> -> t2:Table`
--- PROBLEM: Typing multiple renames is hard because we need to somehow map labels to labels
--- NOTE: can only define for single column for now
+-- PROBLEM: Typing multiple renames is hard because we need to express that a subrow of r1 is relabeled in r2 while
+--          the types remain the same.
+--          The best I can figure out is something like:
+-- renameColumns : r + rr ~ r1, r + rr' ~ r2 => Table r1 -> ((Const (Sigma (Labels rr')))* rr) -> Table r2
+--          This captures that the columns argument maps the labels in rr to the new labels in rr',
+--          but it doesn't express that the type of each relabeled field must be the same in the resulting row.
+-- NOTE: Can only define for single column for now
 --  [x] `c1i` is in `header(t1)` for all `i`
 --  [ ] `[c11 ... c1n]` has no duplicates
 --  [ ] `concat(removeAll(header(t1), [c11 ... c1n]), [c21 ... c2n])` has no duplicates
