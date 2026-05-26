@@ -115,6 +115,9 @@ studentsFavoriteColorsAsTableExpected = (cons ('value := "red", 'count := 2)
                                                 (cons ('value := "blue", 'count := 2)
                                                       nil)))
 
+
+binExample = bin students 'age 5
+
 --Missing Values
 --Data Cleaning
 

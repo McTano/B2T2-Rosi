@@ -294,16 +294,21 @@ count : {l := v} < r => Table r -> #l -> Eq v -> Table {'value := v, 'count := N
 count = \tb l eq. countDictToTable (countHelper tb l eq)
 
 -- ### `bin :: t1:Table * c:ColName * n:Number -> t2:Table`
--- TODO
--- DEPENDS: implement some arithmetic
+-- NOTE: We can't currently stringify the column name to include in the `group` field as shown in the examples for `bin`.
+--       e.g. "0 <= age < 5" instead of "0 <= value < 5"
+--       However, the spec doesn't explictly require a particular format for the strings in `group`.
 -- Groups the values of a numeric column into bins. The parameter `n` specifies the bin width.
 -- This function is useful in creating histograms and converting continuous random variables
 -- to categorical ones.
--- [ ] `c` is in `header(t1)`
--- [ ] `schema(t1)[c]` is `Number`
--- [ ] `header(t2)` is equal to `["group", "count"]`
--- [ ] `schema(t2)["group"]` is `String`
--- [ ] `schema(t2)["count"]` is `Number`
+-- [x] `c` is in `header(t1)`
+-- [x] `schema(t1)[c]` is `Number`
+-- [x] `header(t2)` is equal to `["group", "count"]`
+-- [x] `schema(t2)["group"]` is `String`
+-- [x] `schema(t2)["count"]` is `Number`
+bin : {c := Nat} < r1 => Table r1 -> #c -> Nat -> Table {'group := String, 'count := Nat}
+bin = \t1 c width.
+  let partitioned = partitionWithDict (\r. div (r.c) width) equal t1
+    in map (\p. ('count := length p.'2, 'group := (showNat (mult p.'1 width)) ^ " <= value < " ^ (showNat (mult (succ p.'1) width)))) partitioned
 
 
 -- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
@@ -316,9 +321,6 @@ count = \tb l eq. countDictToTable (countHelper tb l eq)
 -- 2. Can existentials help us express this?
 -- 3. would something like Toohey et al.'s `All` constraint let us do this?
 -- 4. Could we add something to our system that would let us support this, and would it threaten the nice properties of our theory?
-
-addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
-addToPartition = \d eq k v. sorry
 
 pivotPartitionHelper : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
 pivotPartitionHelper = \key eq t inputColumn.
@@ -344,13 +346,6 @@ pivotPartitionHelper = \key eq t inputColumn.
 -- pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
 --   let partitioned = pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn in
 --       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
-
-
---helpers for groupBy
-partitionWithDict : (TableRow r -> K) -> (Eq K) -> Table r -> Dict K (Table r)
-partitionWithDict = \key eq t.
-  foldr (\r a. addToPartition a eq (key r) r ) emptyDict t
-
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
