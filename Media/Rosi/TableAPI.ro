@@ -129,9 +129,9 @@ selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
 
 
 -- ### (overload 1/3) `selectColumns :: t1:Table * bs:Seq<Boolean> -> t2:Table`
--- PROBLEM: columns not ordered
+-- PROBLEM: columns not ordered. requires dependent types to determine output type
 -- ### (overload 2/3) `selectColumns :: t1:Table * ns:Seq<Number> -> t2:Table`
--- PROBLEM: columns not ordered
+-- PROBLEM: columns not ordered. requires dependent types to determine output type
 -- ### (overload 3/3) `selectColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- [x] `cs` has no duplicates
 -- [x] for all `c` in `cs`, `c` is in `header(t1)`
