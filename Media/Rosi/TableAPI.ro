@@ -4,44 +4,84 @@ import EncodeTables, Helpers
 -- ## Constructors
 
 -- ### `emptyTable :: t:Table`
+-- Create an empty table.
+-- [~] `schema(t)` is equal to `[]`
+-- NOTE: This counts as an empty instance of any table type, so the schema can be anything.
+-- [ ] `nrows(t)` is equal to `0`
 emptyTable : Table r
 emptyTable = nil
 
 -- ### `addRows :: t1:Table * rs:Seq<Row> -> t2:Table`
-addRows : Table r ->  Table r -> Table r
+-- Consumes a `Table` and a sequence of `Row` to add, and produces a new `Table` with the 
+-- rows from the original table followed by the given `Row`s.
+-- [x] for all `r` in `rs`, `schema(r)` is equal to `schema(t1)`
+-- [x] `schema(t2)` is equal to `schema(t1)`
+-- [ ] `nrows(t2)` is equal to `nrows(t1) + length(rs)`
+-- NOTE: `Table r` is equivalent to `List (TableRow r)`
+addRows : Table r -> List (TableRow r) -> Table r
 addRows = append
 
 -- ### `addColumn :: t1:Table * c:ColName * vs:Seq<Value> -> t2:Table`
--- UNENFORCED: length of list = length of rows
-addColumn : Table r -> #l -> List v -> Table (r + {l := v})
-addColumn = \ tbl l vals . map (\ pr. pr.'1 ++ (l := pr.'2)) (zip tbl vals)
+
+-- Consumes a column name and a `Seq` of values and produces a new `Table` with the columns
+-- of the input `Table` followed by a column with the given name and values. Note that the
+-- length of `vs` must equal the length of the `Table`.
+-- [x] `c` is not in `header(t1)`
+-- [ ] `length(vs)` is equal to `nrows(t1)`
+-- [x] `header(t2)` is equal to `concat(header(t1), [c])`
+-- [x] for all `c'` in `header(t1)`, `schema(t2)[c']` is equal to `schema(t1)[c']`
+-- [x] `schema(t2)[c]` is the sort of elements of `vs`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+addColumn : Table r -> #c -> List v -> Table (r + {c := v})
+addColumn = \ tbl c vals . map (\ pr. pr.'1 ++ (c := pr.'2)) (zip tbl vals)
 
 -- ### `buildColumn :: t1:Table * c:ColName * f:(r:Row -> v:Value) -> t2:Table`
-buildColumn : Table r -> #l -> (TableRow r -> v) -> Table (r + {l := v})
-buildColumn = \ tbl l f . map (\ pr. pr ++ (l := (f pr))) tbl
+-- Consumes an existing `Table` and produces a new `Table` containing an additional 
+-- column with the given `ColName`, using `f` to compute the values for that column, 
+-- once for each row.
+-- [x] `c` is not in `header(t1)`
+-- [x] `schema(r)` is equal to `schema(t1)`
+-- [x] `header(t2)` is equal to `concat(header(t1), [c])`
+-- [x] for all `c'` in `header(t1)`, `schema(t2)[c']` is equal to `schema(t1)[c']`
+-- [x] `schema(t2)[c]` is equal to the sort of `v`
+-- [ ] `nrows(t2)` is equal to `nrows(t1)`
+buildColumn : Table r -> #c -> (TableRow r -> v) -> Table (r + {c := v})
+buildColumn = \ tbl c f . map (\ pr. pr ++ (c := (f pr))) tbl
 
 -- ### `vcat :: t1:Table * t2:Table -> t3:Table`
+-- Combines two tables vertically. The output table starts with rows from the first input table,
+-- followed by the rows from the second input table.
+-- [x] `schema(t1)` is equal to `schema(t2)`
+-- [x] `schema(t3)` is equal to `schema(t1)`
+-- [ ] `nrows(t3)` is equal to `nrows(t1) + nrows(t2)`
 vcat : Table r -> Table r -> Table r
 vcat = append
 
 -- ### `hcat :: t1:Table * t2:Table -> t3:Table`
--- Our semantics provide the constraint that the columns in t1 and t2 are disjoint,
--- UNENFORCED: length of list = length of rows
+-- Combines two tables horizontally. The output table starts with columns from the first input, 
+-- followed by the columns from the second input.
+-- [x] `concat(header(t1), header(t2))` has no duplicates
+-- [ ] `nrows(t1)` is equal to `nrows(t2)`
+-- [x] `schema(t3)` is equal to `concat(schema(t1), schema(t2))`
+-- [ ] `nrows(t3)` is equal to `nrows(t1)`
 hcat : Table r1 -> Table r2 -> Table (r1 + r2)
 hcat = \ t1 t2 . map (\ pr. pr.'1 ++ pr.'2) (zip t1 t2)
 
 -- ### `values :: rs:Seq<Row> -> t:Table`
--- our representation just is a sequence of Rows.
+-- Returns a sequence of one or more rows as a table.
+-- [ ] `length(rs)` is positive
+-- [x] for all `r` in `rs`, `schema(r)` is equal to `schema(rs[0])`
+-- [x] `schema(t)` is equal to `schema(rs[0])`
+-- [ ] `nrows(t)` is equal to `length(rs)`
+-- NOTE: our encoding of a table just is a sequence of table rows.
 values : List (TableRow r) -> Table r
 values = id
 
 -- ### `crossJoin :: t1:Table * t2:Table -> t3:Table`
--- Requires:
--- [ ] concat(header(t1), header(t2)) has no duplicates
--- Ensures:
--- [ ] schema(t3) is equal to concat(schema(t1), schema(t2))
--- [ ] nrows(t3) is equal to nrows(t1) * nrows(t2)
 -- Computes the cartesian product of two tables.
+-- [x] concat(header(t1), header(t2)) has no duplicates
+-- [x] schema(t3) is equal to concat(schema(t1), schema(t2))
+-- [ ] nrows(t3) is equal to nrows(t1) * nrows(t2)
 crossJoin : r1 + r2 ~ r3 => Table r1 -> Table r2 -> Table r3
 crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 
@@ -59,12 +99,23 @@ leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybePi (prj x))
                                             (find (match r1 eqs) t2)
 
 -- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
+-- Looks up more information on rows of the first table and add those information to create a new table.
+-- The named columns define the keys for looking up. If there is no corresponding row in `t2`, the extra
+-- column will be filled with empty cells.
+-- NOTE: I think the spec implies that in the case of multiple matches for a row in the left table
+--       all matching right rows should appear joined with the left row in the result table.
+--       My current implementation only creates a row for the first match.
 -- NOTE: Requires extra Eq argument
--- ##### Requires:
+-- [x] `cs` has no duplicates
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [x] for all `c` in `cs`, `c` is in `header(t2)`
+-- [x] for all `c` in `cs`, `schema(t1)[c]` is equal to `schema(t2)[c]`
+-- [x] `concat(header(t1), removeAll(header(t2), cs))` has no duplicates
 -- [x] `header(t3)` is equal to `concat(header(t1), removeAll(header(t2), cs))`
--- [x] for all `c` in `header(t1)`, `schema(t3)[c]` is equal to `schema(t1)[c]` [modulo use of Maybe]
--- [x] for all `c` in `removeAll(header(t2), cs))`, `schema(t3)[c]` is equal to `schema(t2)[c]` [modulo use of Maybe]
--- [ ] `nrows(t3)` is equal to `nrows(t1)`
+-- [x] for all `c` in `header(t1)`, `schema(t3)[c]` is equal to `schema(t1)[c]`
+-- [x] for all `c` in `removeAll(header(t2), cs))`, `schema(t3)[c]` is equal to `schema(t2)[c]`
+-- [ ] `nrows(t3)` is equal to `nrows(t1)` if `distinct(selectColumns(t2, cs))` is equal to 
+--     `selectColumns(t2, cs)`, otherwise each row of `t1` may have several matches
 leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
 leftJoin = \t1 t2 eqs. foldr
                               (\r1 a. cons (leftJoinSingle r1 eqs t2) a)
@@ -74,6 +125,8 @@ leftJoin = \t1 t2 eqs. foldr
 -- ## Properties
 
 -- ### `nrows :: t:Table -> n:Number`
+-- Returns a `Number` representing the number of rows in the `Table`.
+-- [ ] `n` is equal to `nrows(t)`
 nrows : Table r -> Nat
 nrows = length
 
@@ -84,8 +137,8 @@ ncols = length
 -- ### `header :: t:Table -> cs:Seq<ColName>`
 -- Also, without changing the structure of tables, this can't work for empty table
 -- header : Fold r1 => Table r1 -> (List L)
--- NOTE: We've been representing Seq<ColName> as Pi (Labels cs), so this gives us what we need for
--- functions that take that input, but doesn't let us treat them as values (I think)
+-- NOTE: We represent `Seq<ColName>` as `Pi (Labels cs)`, so this gives us what we need for
+-- functions that take that input.
 header : Table r1 -> Pi (Labels r1)
 header = \t1. labelsP
 
@@ -96,7 +149,6 @@ header = \t1. labelsP
 getRow : Table r -> Nat -> Maybe (TableRow r)
 getRow = nth
 
-
 -- ### `getValue :: r:Row * c:ColName -> v:Value`
 getValue : TableRow r -> ({l:= v} < r => #l -> v)
 getValue = \t l. t.l
@@ -106,7 +158,6 @@ getValue = \t l. t.l
 -- ### (overloading 2/2) `getColumn :: t:Table * c:ColName -> vs:Seq<Value>`
 getColumn : Table r -> ({l:= v} < r => #l -> List v)
 getColumn = \t l. map (\r.  getValue r l) t
-
 
 -- ## SubTable
 -- ### (overload 1/2) `selectRows :: t1:Table * ns:Seq<Number> -> t2:Table`
@@ -141,7 +192,9 @@ selectRows2 = \t1 bs. if (equal (nrows t1) (length bs))
 selectColumns : cs < r1 => Table r1 -> Pi (Labels cs) -> Table cs
 selectColumns = \t1 ls. map prj t1
 
--- more Rosi-like version
+-- Rosi-like version
+-- For some operations, it is possible to omit the sequence of column names as an argument,
+-- as long as the required return type is clear at the call site.
 selectColumnsAlt : r2 < r1 => Table r1 -> Table r2
 selectColumnsAlt = \t1. map prj t1
 
@@ -177,6 +230,7 @@ distinct = \t1 eq. let ps = (enumerate t1) in (unzip (tfilter ps
 dropColumn : r2 + {l := t} ~ r1 => Table r1 -> #l -> Table r2
 dropColumn = \t1 l. map prj t1
 
+-- Rosi-like version
 dropColumnAlt : r2 < r1 => Table r1 -> Table r2
 dropColumnAlt = \t1. map prj t1
 
@@ -259,11 +313,13 @@ tsort = \t1 c asc. orderBy t1 (cons (pair (\r. r.c) (if asc leqN (\a b. not (leq
 -- DEPENDS: sorting
 -- Given a `Table` and a sequence of column names in that `Table`, return a `Table` with the same rows ordered ascendingly
 -- based on the named columns.
--- [ ] `cs` has no duplicates
+-- [x] `cs` has no duplicates
 -- [x] for all `c` in `cs`, `c` is in `header(t1)`
 -- [x] for all `c` in `cs`, `schema(t1)[c]` is `Number`
 -- [ ] `nrows(t2)` is equal to `nrows(t1)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
+-- NOTE: We use `List (Sigma (Labels cs))` instead of the usual `(Labels cs)` to represent the sequence of column names,
+--       because the order of the column names determines their priority in the comparison when sorting the table rows.
 -- PROBLEM: Can't convince typechecker that r.c must be Nat. See Github issue #28. https://github.com/IowaFP/Rosi/issues/28
 -- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
 -- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
@@ -524,7 +580,7 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 --       but I don't actually need it here.
 --       Table (Maybe* r) works when i use it directly as a type, but I can't get it to typecheck if I try to
 --       make it a constraint, like r' ~ (Maybe* r)
--- NOTE: We could also define a version that removes the Maybe* from the return type by just omitting `(map liftMaybePi)`
+-- NOTE: We could define a version that removes the Maybe* from the return type by just omitting `(map liftMaybePi)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
 -- Removes rows that have some values missing
 dropna : Fold r => Table (Maybe* r) -> Table (Maybe* r)
@@ -532,6 +588,7 @@ dropna = (map liftMaybePi) . filterMaybe . (map unliftMaybePiPi)
 
 -- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
 -- Scans the named column and fills in `v` when a cell is missing value.
+-- NOTE: We could define a version that removes the Maybe* from the return type by replacing `(maybe (Just v) Just)` with `(fromMaybe v)`
 -- [x] `c` is in `header(t1)`
 -- [x] `v` is of sort `schema(t1)[c]`
 -- [x] `schema(t2)` is equal to `schema(t1)`
