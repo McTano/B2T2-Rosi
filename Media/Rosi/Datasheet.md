@@ -93,9 +93,10 @@ We cannot express the constraints based on:
 - whether an index is in-bounds for a table or sequence.
 - duplicates in sequences of values, or in tables, which are encoded as sequences of rows (specifically, lists of records).
 
-However, we do enforce constraints on duplicate column names in table headers or sequences of column names (actually unordered records; see first answer in this section). These constraints are usually implicit, and are entailed by the fact that:
+However, we do enforce constraints on duplicate column names in table headers or sequences of column names (actually unordered records; see first answer in this section). These constraints are usually implicit, and are entailed by either:
 
 a. records cannot contain duplicate labels, or
+
 b. the constraint `r1 + r2 ~ r3` (meaning "r3 is the concatenation of r1 with r2") is only satisfiable when the labels in r1 and r2 are disjoint.
 
 In addition, the following operations currently present problems. See notes in `TableAPI.ro` for details.
