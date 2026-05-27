@@ -243,8 +243,8 @@ allNonEmpty = fold #List (const isNonEmpty) and True
 fromJust_DANGER_ : Maybe a -> a
 fromJust_DANGER_ = fromMaybe (fix id)
 
-unliftMaybePiPi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
-unliftMaybePiPi = \r. if (isJusts r)
+unliftMaybePi : Fold z => Pi (Maybe* z) -> Maybe (Pi z)
+unliftMaybePi = \r. if (isJusts r)
                  (Just (syn #Id (\k. fromJust_DANGER_ r.k)))
                  Nothing
 
@@ -318,7 +318,7 @@ transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
 transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
                                                              (transpose (columnsTail cs)))
                                         |  'Nothing: u -> nil)
-                                                         ((unliftMaybePiPi . nonEmptyPi) cs))
+                                                         ((unliftMaybePi . nonEmptyPi) cs))
 
 
 -- Speculative Functions

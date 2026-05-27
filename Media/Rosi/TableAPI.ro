@@ -584,7 +584,7 @@ completeCases = \t1 l. map (\r. isJust (r.l)) t1
 -- [x] `schema(t2)` is equal to `schema(t1)`
 -- Removes rows that have some values missing
 dropna : Fold r => Table (Maybe* r) -> Table (Maybe* r)
-dropna = (map liftMaybePi) . filterMaybe . (map unliftMaybePiPi)
+dropna = (map liftMaybePi) . filterMaybe . (map unliftMaybePi)
 
 -- ### `fillna :: t1:Table * c:ColName * v:Value -> t2:Table`
 -- Scans the named column and fills in `v` when a cell is missing value.
