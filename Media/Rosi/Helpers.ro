@@ -117,6 +117,13 @@ find = fix (\find f.
                                       (Just xs.'1)
                                       (find f xs.'2))))
 
+findAll : (a -> Bool) -> List a -> List a
+findAll = fix (\findAll f.
+                    ( 'Nil: u -> nil
+                    | 'Cons: xs -> (if (f xs.'1)
+                                       (cons xs.'1 (findAll f xs.'2))
+                                       (findAll f xs.'2))))
+
 findIndex : (a -> Bool) -> List a -> Maybe Nat
 findIndex = \f xs. maybe Nothing (\x. Just (x.'2)) (find (\p. f p.'1) (enumerate xs))
 

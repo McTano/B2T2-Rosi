@@ -42,6 +42,8 @@ leftJoinExample2Expected = (cons ('name := "Colton", 'age := 8, 'favorite_color 
                                                    (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
                                                     nil)))))
 
+-- leftJoinExample3 : StudentsTable
+leftJoinExample3 = leftJoin students studentsWithDupeColors (eqP ('favorite_color := (~)))
 
 -- we can omit the type annotation for this version
 -- selectColumnsStudents : Table {'name := String, 'favorite_color := String}

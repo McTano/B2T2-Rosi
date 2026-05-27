@@ -2,15 +2,15 @@
 
 cd ~/Rosi
 
-
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TableAPI
 
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI
 cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers
 
 
 # constructors
-# cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
-# -e crossExample,leftJoinExample1,leftJoinExample1Expected,leftJoinExample2,leftJoinExample2Expected
+cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+-e crossExample,leftJoinExample1,leftJoinExample1Expected,leftJoinExample2,leftJoinExample2Expected,leftJoinExample3
 
 # properties
 
@@ -47,8 +47,8 @@ cabal run Rosi -- -i rolib -i ../B2T2-Rosi/Media/Rosi TestHelpers
 # -e nonEmptyExample1,nonEmptyExample2,nonEmptyPiExample1,nonEmptyPiExample2,transposeColumnsExample1,transposeColumnsExample2
 
 # aggregate
-cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
--e countFavoriteNumber,falseVal,studentsFavoriteColorsAsTable,studentsFavoriteColorsAsTableExpected,binExample
+# cabal run Rosi -- --print-instantiations -i rolib -i ../B2T2-Rosi/Media/Rosi TestTableAPI \
+# -e countFavoriteNumber,falseVal,studentsFavoriteColorsAsTable,studentsFavoriteColorsAsTableExpected,binExample
 
 # test printing
 

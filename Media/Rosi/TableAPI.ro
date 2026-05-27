@@ -93,10 +93,13 @@ match = \r1 eqs r2. (eqs (prj r1) (prj r2))
 
 -- in success, map Just over the matching row,
 -- in failure, return nothing Record
-leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Pi (r1 + (Maybe* r2'))
-leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybePi (prj x))
-                                        | 'Nothing: u -> nothingRecord)
-                                            (find (match r1 eqs) t2)
+leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Table (r1 + (Maybe* r2'))
+leftJoinSingle = \r1 eqs t2.
+  let matches = (findAll (match r1 eqs) t2) in
+    (crossJoin (cons r1 nil)
+              (( 'Cons: xs -> map (\x. liftMaybePi (prj x)) matches
+               | 'Nil: u -> cons nothingRecord nil)
+                                                   matches))
 
 -- ### `leftJoin :: t1:Table * t2:Table * cs:Seq<ColName> -> t3:Table`
 -- Looks up more information on rows of the first table and add those information to create a new table.
@@ -117,10 +120,7 @@ leftJoinSingle = \r1 eqs t2. r1 ++  ( 'Just: x -> (liftMaybePi (prj x))
 -- [ ] `nrows(t3)` is equal to `nrows(t1)` if `distinct(selectColumns(t2, cs))` is equal to 
 --     `selectColumns(t2, cs)`, otherwise each row of `t1` may have several matches
 leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
-leftJoin = \t1 t2 eqs. foldr
-                              (\r1 a. cons (leftJoinSingle r1 eqs t2) a)
-                              nil
-                              t1
+leftJoin = \t1 t2 eqs. flattenList (map (\r1. leftJoinSingle r1 eqs t2) t1)
 
 -- ## Properties
 
