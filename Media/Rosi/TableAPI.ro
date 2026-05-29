@@ -105,9 +105,6 @@ leftJoinSingle = \r1 eqs t2.
 -- Looks up more information on rows of the first table and add those information to create a new table.
 -- The named columns define the keys for looking up. If there is no corresponding row in `t2`, the extra
 -- column will be filled with empty cells.
--- NOTE: I think the spec implies that in the case of multiple matches for a row in the left table
---       all matching right rows should appear joined with the left row in the result table.
---       My current implementation only creates a row for the first match.
 -- NOTE: Requires extra Eq argument
 -- [x] `cs` has no duplicates
 -- [x] for all `c` in `cs`, `c` is in `header(t1)`
