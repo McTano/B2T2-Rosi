@@ -614,8 +614,8 @@ projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).
 -- ### `pivotLonger :: t1:Table * cs:Seq<ColName> * c1:ColName * c2:ColName -> t2:Table`
 -- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
 -- NOTE: We want to represent the constraint that all the columns in `cs` are mapped to `T` in `r1`. I had trouble with this.
+-- NOTE: I thought that if I could get `coerceVs` to work then I could do it, but I also need to make the predicates go through.
 -- NOTE: split constraint might be useful here.
--- NOTE: I've been unable to extract bare T to store in column. If I could get `coerceVs` to work then I could do it.
 -- Reshapes the input table and make it longer. The data kept in the named columns are moved to
 -- two new columns, one for the column names and the other for the cell values.
 -- [ ] `length(cs)` is positive
@@ -662,7 +662,7 @@ synthOne :
     rr + ((Const (Maybe T))* cs) ~ r2
     => Equivs rr cs T -> Pi r2
 synthOne =
-  /\T:*. \r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
+  \@T r. (r.'shared) ++ (syn #(Const (Maybe T)) (\l. findValue l r.'rows))
 
 synthFromEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1,

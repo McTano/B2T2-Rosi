@@ -164,8 +164,9 @@ sort = \ls cmp. sorry
 type Partition : * -> R[*] -> *
 type Partition = \t ks. Pi ((Const (List t))* ks)
 
+-- returns a record in which each label in ks is mapped to an empty list
 emptyPartition : forall t:*. Partition t ks
-emptyPartition = /\t: *. syn #(Const (List t)) (\l. nil)
+emptyPartition = \@t. syn #(Const (List t)) (\l. nil)
 
 extendPartition : Partition t ks -> Sigma (Labels ks) -> t -> Partition t ks
 extendPartition = \p k t. ana #(Const Unit) (\l. const ((l := cons t p.l) ++ (prj p))) k
@@ -175,10 +176,10 @@ partition : (Pi r -> (Sigma (Labels ks))) -> List (Pi r) -> Partition (Pi r) ks
 partition = \key t. foldr (\r a. extendPartition a (key r) r) emptyPartition t
 
 projectPartition : forall v:*. Partition t ks -> (t -> v) -> Partition v ks
-projectPartition = /\v. \p project. syn #(Const (List v)) (\l. map project p.l)
+projectPartition = \@v. \p project. syn #(Const (List v)) (\l. map project p.l)
 
 aggregatePartition : forall v rt:*. Partition v ks -> (Sigma (Labels ks) -> List v -> rt) -> Pi ((Const rt) ks)
-aggregatePartition = /\v rt. \p aggregate. syn #(Const rt) (\k. aggregate (inj (k := tt)) p.k)
+aggregatePartition = \@v @rt. \p aggregate. syn #(Const rt) (\k. aggregate (inj (k := tt)) p.k)
 
 --------------------------------------------------------------------------------
 -- Dict
@@ -230,7 +231,7 @@ nothingRecord : Pi (Maybe* z)
 nothingRecord = syn #Maybe (const Nothing)
 
 nothingRecordExample : Pi {'1 := Maybe Nat, '2 := Maybe String}
-nothingRecordExample = prj (nothingRecord [{'1 := Nat, '2 := String}])
+nothingRecordExample = prj (nothingRecord @{'1 := Nat, '2 := String})
 
 nothingRecordExampleExpected = ('1 := Nothing, '2 := Nothing)
 
@@ -343,7 +344,7 @@ selectField = \r ls. ana #(Const Unit) (\l v. l: r.l) ls
 
 -- extract a bare T from a variant containing all Ts.
 coerceVs : Sigma (((Const T)*) cs) -> T
-coerceVs = /\T:*. \cs. ana #(Const T) (\l x. x) cs
+coerceVs = \@T. \cs. ana #(Const T) (\l x. x) cs
 
 
 -- There was somewhere I was able to use this, which could indicate

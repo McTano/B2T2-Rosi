@@ -43,6 +43,9 @@ leftJoinExample2Expected = (cons ('name := "Colton", 'age := 8, 'favorite_color 
                                                     nil)))))
 
 -- leftJoinExample3 : StudentsTable
+-- This has an unsatisfiable constraint since the input tables should have disjoint schemas except for 'favorite_color.
+-- It doesn't produce an error, but doesn't fully resolve to a value.
+-- with a type annotation, it does produce an error.
 leftJoinExample3 = leftJoin students studentsWithDupeColors (eqP ('favorite_color := (~)))
 
 -- we can omit the type annotation for this version
@@ -126,14 +129,14 @@ binExample = bin students 'age 5
 -- Utilities
 -- type annotation on f and at top level needed
 -- updateExample1 : StudentsTable
-updateExample1 = update students (\r1: TableRow StudentsRow. ('name := "Mud"))
+updateExample1 = update students (\(r1: TableRow StudentsRow). ('name := "Mud"))
 
 -- updateExample2 : Table {'name := String, 'age := String, 'favorite_color := String}
 updateExample2 = update students (\r1. ('age := r1.'name))
 
 -- An example this simple can be handled without an annotation.
 updateExample3 = update students id
-updateExample4 = update students (\r1: TableRow StudentsRow. ('age := r1.'name))
+updateExample4 = update students (\(r1: TableRow StudentsRow). ('age := r1.'name))
 
 -- Printing
 
