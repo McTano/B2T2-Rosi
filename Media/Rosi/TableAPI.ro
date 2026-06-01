@@ -85,17 +85,11 @@ values = id
 crossJoin : r1 + r2 ~ r3 => Table r1 -> Table r2 -> Table r3
 crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 
-
--- helpers for leftJoin:
--- return r2 if it is equal to r1 according to eqs
-match : cs < r1, cs < r2 => Pi r1 -> (Eq (Pi cs)) -> Pi r2 -> Bool
-match = \r1 eqs r2. (eqs (prj r1) (prj r2))
-
 -- in success, map Just over the matching row,
 -- in failure, return nothing Record
 leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Table (r1 + (Maybe* r2'))
 leftJoinSingle = \r1 eqs t2.
-  let matches = (findAll (match r1 eqs) t2) in
+  let matches = (findAll (partialEquality eqs r1) t2) in
     (crossJoin (cons r1 nil)
               (( 'Cons: xs -> map (\x. liftMaybePi (prj x)) matches
                | 'Nil: u -> cons nothingRecord nil)
@@ -231,8 +225,6 @@ dropColumn = \t1 l. map prj t1
 dropColumnAlt : r2 < r1 => Table r1 -> Table r2
 dropColumnAlt = \t1. map prj t1
 
-
-
 -- ### `dropColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 dropColumns : r2 + cs ~ r1 => Table r1 -> Pi (Labels cs) -> Table r2
 dropColumns = \t1 cs. map prj t1
@@ -260,20 +252,20 @@ selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.
 -- helpers for orderBy
 
 multiCompare : List (Pair (TableRow r -> k) (Leq k)) -> Compare (TableRow r)
-multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
+multiCompare = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> EQ
                                                | 'Cons: xs -> if (xs.'1.'2 (xs.'1.'1 a) (xs.'1.'1 b))
                                                                  (if (xs.'1.'2 (xs.'1.'1 b) (xs.'1.'1 a))
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                     (inj Less))
-                                                                 (inj Greater)) cmps)
+                                                                     (inj LT))
+                                                                 (inj GT)) cmps)
 
 multiCompareAlt : List (Leq (TableRow r1)) -> Compare (TableRow r1)
-multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> Equal
+multiCompareAlt = fix (\multiCompareAlt cmps a b. ( 'Nil: u -> EQ
                                                   | 'Cons: xs -> if (xs.'1 a b)
                                                                     (if (xs.'1 b a)
                                                                        (multiCompareAlt xs.'2 a b)
-                                                                       (inj Less))
-                                                                    (inj Greater)) cmps)
+                                                                       (inj LT))
+                                                                    (inj GT)) cmps)
 
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
 -- DEPENDS: sorting
@@ -601,12 +593,6 @@ pcHelper = \cs l x. cons ('key := inj (l := tt), 'value := inj (l := x)) emptyTa
 splitCs : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pair (Pi cs) (Pi rr)
 splitCs = \r1 cs. pair (prj r1) (prj r1)
 
-removeAll : cs + rr ~ r1 => Pi r1 -> Pi (Labels cs) -> Pi rr
-removeAll = \r1 cs. prj r1
-
-removeAllAlt : cs + rr ~ r1 => Pi r1 -> Pi rr
-removeAllAlt = \r1. prj r1
-
 projectColumns : Fold r1, Fold cs, cs < r1 => TableRow r1 -> Pi (Labels cs) -> Table {'key := Sigma (Labels cs), 'value := Sigma cs}
 projectColumns = \r1 cs. fold #Id (pcHelper cs) vcat emptyTable (splitCs r1 cs).'1
 
@@ -632,10 +618,6 @@ pivotLonger :
         => Table r1 -> Pi (Labels cs) -> Table r2
 pivotLonger = \t cs.
                     selectMany t (\p. projectColumns p.'1 cs) (\p. (prj p.'1) ++ (p.'2))
-
--- PivotWider helpers
-partialEquality : cs < r => Eq (Pi cs) -> Eq (Pi r)
-partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
 
 -- check if the key stored in the sum at l2 is equal to l1
 labelPredicate :

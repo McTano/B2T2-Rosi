@@ -14,16 +14,16 @@ type Leq : * -> *
 type Leq = \a. (a -> a -> Bool)
 
 type Cmp : *
-type Cmp = Sigma {'Greater := Unit, 'Less := Unit, 'Equal := Unit}
+type Cmp = Sigma {'GT := Unit, 'LT := Unit, 'EQ := Unit}
 
-Greater: Cmp
-Greater = 'Greater: tt
+GT: Cmp
+GT = 'GT: tt
 
-Less: Cmp
-Less = 'Less: tt
+LT: Cmp
+LT = 'LT: tt
 
-Equal: Cmp
-Equal = 'Equal: tt
+EQ: Cmp
+EQ = 'EQ: tt
 
 
 type Compare : * -> *
@@ -39,16 +39,16 @@ leqN = fix (\leqN. ( 'Zero: u -> (const True)
                                   | 'Succ: b' -> leqN a' b')))
 
 compN : Compare Nat
-compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> Equal
-                                   | 'Succ: b' -> Less)
-                     | 'Succ: a' -> ( 'Zero: u -> Greater
+compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> EQ
+                                   | 'Succ: b' -> LT)
+                     | 'Succ: a' -> ( 'Zero: u -> GT
                                     | 'Succ: b' -> compN a' b')))
 
 divMod : Nat -> Nat -> Pair Nat Nat
 divMod = fix (\divMod n1 n2. 
-              ((( 'Equal: u -> (pair 1 0)
-               | 'Less: u -> (pair 0 n1)
-               | 'Greater: u -> (if (equal (monus n1 n2) 0)
+              ((( 'EQ: u -> (pair 1 0)
+               | 'LT: u -> (pair 0 n1)
+               | 'GT: u -> (if (equal (monus n1 n2) 0)
                                  (pair 0 n1)
                                  ((\p. pair (add p.'1 1) p.'2) (divMod (monus n1 n2) n2)))))
               (compN n1 n2)))
@@ -270,6 +270,11 @@ labelsS = \r. ana #(\t. t) (\l v. inj (l := tt)) r
 
 labelsL : List (Pi r) -> Pi (Labels r)
 labelsL = const labelsP
+
+
+-- PivotWider helpers
+partialEquality : cs < r1, cs < r2 => Eq (Pi cs) -> Pi r1 -> Pi r2 -> Bool
+partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
 
 --------------------------------------------------------------------------------
 -- Non-empty List type
