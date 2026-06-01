@@ -377,8 +377,8 @@ coerceLabel = \l. inj (l := tt)
 type Comparer : * -> *
 type Comparer = \t. forall z. (forall v. (t -> v) -> Leq v -> z) -> z
 
-leqComparer : (t -> v) -> Leq v -> Comparer t
-leqComparer = \getKey compare f. f getKey compare
+mkComparer : (t -> v) -> Leq v -> Comparer t
+mkComparer = \getKey compare f. f getKey compare
 
 -- Produces a three-way comparison function (<=>) from a <= function
 compFromLeq : Leq v -> Compare v
@@ -394,9 +394,9 @@ combineCompare =
           ('EQ: u -> c2 a b
           | inj)
 
-applyLeqComparer : Comparer t -> Leq t
-applyLeqComparer = \c r1 r2. c (\getKey compare. compare (getKey r1) (getKey r2))
+applyComparer : Comparer t -> Leq t
+applyComparer = \c r1 r2. c (\getKey compare. compare (getKey r1) (getKey r2))
 
 -- combine a list of Leq compares into a single Compare based on their order.
 multiCompare : List (Comparer t) -> Compare t
-multiCompare = (foldr combineCompare (const (const EQ))) . (map (compFromLeq . applyLeqComparer))
+multiCompare = (foldr combineCompare (const (const EQ))) . (map (compFromLeq . applyComparer))

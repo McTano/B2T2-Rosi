@@ -268,7 +268,7 @@ orderBy = \t1 cmps. sort (multiCompare cmps) t1
 -- [ ] `nrows(t2)` is equal to `nrows(t1)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
 tsort : {c := Nat} < r1 => Table r1 -> #c -> Bool -> Table r1
-tsort = \t1 c asc. orderBy t1 (cons (leqComparer (\r. r.c) (if asc leqN (\a b. not (leqN a b)))) nil)
+tsort = \t1 c asc. orderBy t1 (cons (mkComparer (\r. r.c) (if asc leqN (\a b. not (leqN a b)))) nil)
 
 -- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- DEPENDS: sorting
