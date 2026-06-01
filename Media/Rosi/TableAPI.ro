@@ -89,7 +89,7 @@ crossJoin = \t1 t2. foldr (\r1 a. append (map (\r2. r1 ++ r2) t2) a) nil t1
 -- in failure, return nothing Record
 leftJoinSingle : cs < r1, cs + r2' ~ r2 => Pi r1 -> Eq (Pi cs) -> Table r2 -> Table (r1 + (Maybe* r2'))
 leftJoinSingle = \r1 eqs t2.
-  let matches = (findAll (matchPrj eqs r1) t2) in
+  let matches = (findAll (eqPrj eqs r1) t2) in
     (crossJoin (cons r1 nil)
               (( 'Cons: xs -> map (\x. liftMaybePi (prj x)) matches
                | 'Nil: u -> cons nothingRecord nil)
@@ -655,7 +655,7 @@ synthFromEquivs =
 getEquivs :
   {'key := Sigma (Labels cs), 'value := T} + rr ~ r1 =>
   List (Pi r1) -> Eq (Pi rr) -> List (Equivs rr cs T)
-getEquivs = \t1 eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (matchPrj eq r))))) t1
+getEquivs = \t1 eq. map (\r. ('shared := prj r, 'rows := (map prj (tfilter t1 (eqPrj eq r))))) t1
 
 -- ### `pivotWider :: t1:Table * c1:ColName * c2:ColName -> t2:Table`
 -- NOTE: for simplicity I'm fixing the key and value column names to `key and `value for now
@@ -675,7 +675,7 @@ pivotWider :
           => Table r1 -> Eq (Pi rr) -> Pi (Labels cs) -> Table r2
 pivotWider = \t1 eq cs.
                 -- get all the rows which are distinct except for the values at 'key and 'value.
-                  let uniqs = distinct t1 (matchPrj eq) in
+                  let uniqs = distinct t1 (eqPrj eq) in
                 -- select all rows equal to that row except at 'key and 'value
                             synthFromEquivs (getEquivs uniqs eq)
 
