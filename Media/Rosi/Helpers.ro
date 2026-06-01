@@ -273,8 +273,8 @@ labelsL = const labelsP
 
 
 -- PivotWider helpers
-partialEquality : cs < r1, cs < r2 => Eq (Pi cs) -> Pi r1 -> Pi r2 -> Bool
-partialEquality = \eqs r1 r2. eqs (prj r1) (prj r2)
+matchPrj : cs < r1, cs < r2 => Eq (Pi cs) -> Pi r1 -> Pi r2 -> Bool
+matchPrj = \eqs r1 r2. eqs (prj r1) (prj r2)
 
 --------------------------------------------------------------------------------
 -- Non-empty List type
