@@ -364,7 +364,7 @@ bin = \t1 c width.
     in map (\p. ('count := length p.'2, 'group := (showNat (mult p.'1 width)) ^ " <= value < " ^ (showNat (mult (succ p.'1) width)))) partitioned
 
 
--- NOTE: We would like to be able to express that the agg argument is Pi {l := r1.l -> {l2 := r2.l2}}
+-- NOTE: We would like to be able to express that the agg argument is (Labels r1 ~ Labels r2) => Pi {for each #l in r1 | l := (r1.l -> r2.l)}
 -- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
 -- i.e. Pi {l := r1.l -> r2.l}
 -- ^ Rereading the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in Pottiers and Remy 2005
@@ -392,13 +392,12 @@ pivotPartitionHelper = \key eq t inputColumn.
 -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
 -- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
 -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
-
--- PROBLEM: Currently this produces an error which states that the predicate `{inputColumn := v1} < r1` does not imply itself. May require a fix to Rosi.
--- Other attempts produced other interesting errors in Rosi. See Issues #29 and #30 on the Rosi repo. https://github.com/IowaFP/Rosi/issues
--- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
--- pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
---   let partitioned = pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn in
---       map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned
+pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
+pivotTable = 
+  \t1 groupColumn outputColumn inputColumn agg eq.
+    map
+      (\p. (groupColumn := p.'1, outputColumn := agg p.'2))
+      (pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn)
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
