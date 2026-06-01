@@ -77,6 +77,8 @@ A `Seq<ColName>` is consistently represented as an unordered record where each c
 
 Wherever `Number` is required, we generally use `Nat`, except in `head` where special behavior is defined for negative values, so we use `Int` instead.
 
+We are able to support existential types to the extent required by `orderBy`. A `comparer` is constructed with `mkComparer` and used with `applyComparer`.
+
 > Q. Which operations are entirely inexpressible? Why?
 
 Implementation of the following operations are currently blocked by type errors, which may be resolvable in the current version of Rosi, or may require changes to Rosi. See notes in `TableAPI.ro` for details.
@@ -110,12 +112,12 @@ In addition, the following operations currently present problems. See notes in `
 
 > Q. Which operations’ expressibility is unknown? Why?
 
-- `orderBy`: Requires existential types to allow the `K` type to vary within the sequence of `(getKey, compare)` pairs. This is probably solvable in the current version of Rosi by an ad-hoc existential type. We have a demo of this approach in the Rosi repo, but applying this solution is TODO.
+None.
 
 
 > Q. Which operations can be expressed more precisely than in the benchmark? How?
 
-None. (Probably)
+None so far.
 
 ## Example Programs
 

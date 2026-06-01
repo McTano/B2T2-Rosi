@@ -10,20 +10,21 @@ type Int = Sigma {'Plus := Nat, 'Minus := Nat}
 -- Generic types
 --------------------------------------------------------------------------------
 
+-- Identical to Eq a, just used for clarity
 type Leq : * -> *
 type Leq = \a. (a -> a -> Bool)
 
 type Cmp : *
-type Cmp = Sigma {'Greater := Unit, 'Less := Unit, 'Equal := Unit}
+type Cmp = Sigma {'GT := Unit, 'LT := Unit, 'EQ := Unit}
 
-Greater: Cmp
-Greater = 'Greater: tt
+GT: Cmp
+GT = 'GT: tt
 
-Less: Cmp
-Less = 'Less: tt
+LT: Cmp
+LT = 'LT: tt
 
-Equal: Cmp
-Equal = 'Equal: tt
+EQ: Cmp
+EQ = 'EQ: tt
 
 
 type Compare : * -> *
@@ -39,16 +40,16 @@ leqN = fix (\leqN. ( 'Zero: u -> (const True)
                                   | 'Succ: b' -> leqN a' b')))
 
 compN : Compare Nat
-compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> Equal
-                                   | 'Succ: b' -> Less)
-                     | 'Succ: a' -> ( 'Zero: u -> Greater
+compN = fix (\compN. ( 'Zero: u -> ( 'Zero: u -> EQ
+                                   | 'Succ: b' -> LT)
+                     | 'Succ: a' -> ( 'Zero: u -> GT
                                     | 'Succ: b' -> compN a' b')))
 
 divMod : Nat -> Nat -> Pair Nat Nat
 divMod = fix (\divMod n1 n2. 
-              ((( 'Equal: u -> (pair 1 0)
-               | 'Less: u -> (pair 0 n1)
-               | 'Greater: u -> (if (equal (monus n1 n2) 0)
+              ((( 'EQ: u -> (pair 1 0)
+               | 'LT: u -> (pair 0 n1)
+               | 'GT: u -> (if (equal (monus n1 n2) 0)
                                  (pair 0 n1)
                                  ((\p. pair (add p.'1 1) p.'2) (divMod (monus n1 n2) n2)))))
               (compN n1 n2)))
@@ -271,6 +272,11 @@ labelsS = \r. ana #(\t. t) (\l v. inj (l := tt)) r
 labelsL : List (Pi r) -> Pi (Labels r)
 labelsL = const labelsP
 
+
+-- PivotWider helpers
+eqPrj : cs < r1, cs < r2 => Eq (Pi cs) -> Pi r1 -> Pi r2 -> Bool
+eqPrj = \eqs r1 r2. eqs (prj r1) (prj r2)
+
 --------------------------------------------------------------------------------
 -- Non-empty List type
 --------------------------------------------------------------------------------
@@ -366,3 +372,31 @@ coerceLabel = \l. inj (l := tt)
 --   1. (Const A)* r ~ ((Const A)* (Const B)* r)
 --   2. If `{l := A} < r` then  `{l := B} <  (Const B)* r`
 -- maybe we could have a stronger rule about `Const`
+
+-- Comparison over existentially hidden key type
+type Comparer : * -> *
+type Comparer = \t. forall z. (forall v. (t -> v) -> Leq v -> z) -> z
+
+mkComparer : (t -> v) -> Leq v -> Comparer t
+mkComparer = \getKey compare f. f getKey compare
+
+-- Produces a three-way comparison function (<=>) from a <= function
+compFromLeq : Leq v -> Compare v
+compFromLeq = \leq a b. if (leq a b)
+                          (if (leq b a) EQ GT)
+                          LT
+
+-- combine 2 compare functions, with the 1st taking precedence
+combineCompare : Compare v -> Compare v -> Compare v
+combineCompare =
+  \c1 c2 a b.
+    match (c1 a b)
+          ('EQ: u -> c2 a b
+          | inj)
+
+applyComparer : Comparer t -> Leq t
+applyComparer = \c r1 r2. c (\getKey compare. compare (getKey r1) (getKey r2))
+
+-- combine a list of Leq compares into a single Compare based on their order.
+multiCompare : List (Comparer t) -> Compare t
+multiCompare = (foldr combineCompare (const (const EQ))) . (map (compFromLeq . applyComparer))
