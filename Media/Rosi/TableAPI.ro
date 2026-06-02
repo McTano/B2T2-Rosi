@@ -111,7 +111,7 @@ leftJoinSingle = \r1 eqs t2.
 -- [ ] `nrows(t3)` is equal to `nrows(t1)` if `distinct(selectColumns(t2, cs))` is equal to 
 --     `selectColumns(t2, cs)`, otherwise each row of `t1` may have several matches
 leftJoin : cs < r1, cs + r2' ~ r2 => Table r1 -> Table r2 -> Eq (Pi cs) -> Table (r1 + (Maybe* r2'))
-leftJoin = \t1 t2 eqs. flattenList (map (\r1. leftJoinSingle r1 eqs t2) t1)
+leftJoin = \t1 t2 eqs. concat (map (\r1. leftJoinSingle r1 eqs t2) t1)
 
 -- ## Properties
 
@@ -126,8 +126,10 @@ ncols : Table r -> Nat
 ncols = length
 
 -- ### `header :: t:Table -> cs:Seq<ColName>`
--- Also, without changing the structure of tables, this can't work for empty table
--- header : Fold r1 => Table r1 -> (List L)
+-- This can work for empty tables as long as the type is known.
+-- However, given the current limitations of syn and label serialization,
+-- it may only be possible to print the internal representation of the labels,
+-- not the original labels as written.
 -- NOTE: We represent `Seq<ColName>` as `Pi (Labels cs)`, so this gives us what we need for
 -- functions that take that input.
 header : Table r1 -> Pi (Labels r1)
@@ -199,10 +201,10 @@ selectColumnsAlt = \t1. map prj t1
 -- [ ] if `n` is non-negative then `nrows(t2)` is equal to `n`
 -- [ ] if `n` is negative then `nrows(t2)` is equal to `nrows(t1) + n`
 tableHead : Table r1 -> Int -> Table r1
-tableHead = \t1.  'Plus: n -> takeN t1 n
+tableHead = \t1.  'Plus: n -> take t1 n
                 | 'Minus: n ->
                   ( 'Zero: u -> nil
-                  | 'Succ: m -> takeN t1 (monus (nrows t1) n)) n
+                  | 'Succ: m -> take t1 (monus (nrows t1) n)) n
 
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
 tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
@@ -244,8 +246,8 @@ dropColumnsAlt = dropColumnAlt
 -- [x] `schema(r4)` is equal to `schema(t3)`
 selectMany : Table r1 -> (Pair (TableRow r1) Nat -> Table r2) -> (Pair (TableRow r1) (TableRow r2) -> TableRow r3) -> Table r3
 -- selectMany = \t1 project result. map (\r1. (map result (zip r1 (map project (enumerate t1))))) t1
--- selectMany = \t1 project result. flattenList (map (\r1. result (zip r1 (map project (enumerate t1)))) t1)
-selectMany = \t1 project result. (map result (flattenList (map (\p. zipRepeat p.'1 (project p)) (enumerate t1))))
+-- selectMany = \t1 project result. concat (map (\r1. result (zip r1 (map project (enumerate t1)))) t1)
+selectMany = \t1 project result. (map result (concat (map (\p. zipRepeat p.'1 (project p)) (enumerate t1))))
 
 -- ## Ordering
 -- ### `orderBy :: t1:Table * Seq<Exists K . getKey:(r:Row -> k:K) * compare:(k1:K * k2:K -> Boolean)> -> t2:Table`
@@ -268,7 +270,7 @@ orderBy = \t1 cmps. sort (multiCompare cmps) t1
 -- [ ] `nrows(t2)` is equal to `nrows(t1)`
 -- [x] `schema(t2)` is equal to `schema(t1)`
 tsort : {c := Nat} < r1 => Table r1 -> #c -> Bool -> Table r1
-tsort = \t1 c asc. orderBy t1 (cons (mkComparer (\r. r.c) (if asc leqN (\a b. not (leqN a b)))) nil)
+tsort = \t1 c asc. orderBy t1 (cons (mkComparer (\r. r.c) (if asc lte (\a b. not (lte a b)))) nil)
 
 -- ### `sortByColumns :: t1:Table * cs:Seq<ColName> -> t2:Table`
 -- DEPENDS: sorting
@@ -283,11 +285,11 @@ tsort = \t1 c asc. orderBy t1 (cons (mkComparer (\r. r.c) (if asc leqN (\a b. no
 --       because the order of the column names determines their priority in the comparison when sorting the table rows.
 -- PROBLEM: Can't convince typechecker that r.c must be Nat. See Github issue #28. https://github.com/IowaFP/Rosi/issues/28
 -- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
--- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc lte (\a b. not (lte a b))))) cs)
 
 -- Alternate version requiring the leq functions to be passed in, but not requiring the columns to be `Nat`
 -- sortByColumns : Table r -> List (Sigma (Leq* r)) -> Bool -> Table r
--- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc leqN (\a b. not (leqN a b))))) cs)
+-- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc lte (\a b. not (lte a b))))) cs)
 
 -- ## Aggregate
 
@@ -333,29 +335,45 @@ bin = \t1 c width.
 -- i.e. Pi {l := r1.l -> r2.l}
 -- ^ In the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in Pottiers and Remy 2005
 -- may be possible to define when we have GADTS and implicits
-pivotPartitionHelper : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
-pivotPartitionHelper = \key eq t inputColumn.
-  foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
+-- pivotPartitionHelper : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
+-- pivotPartitionHelper = \key eq t inputColumn.
+--   foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
+
+-- -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
+-- -- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
+-- -- of `agg` specifies the output column, the input column, and the function that compute the 
+-- -- summarizing value (e.g. average, sum, and count).
+-- -- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- -- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
+-- -- [x] `ci2` is in `header(t1)`
+-- -- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- -- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- -- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
+-- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
+-- pivotTable = 
+--   \t1 groupColumn outputColumn inputColumn agg eq.
+--     map
+--       (\p. (groupColumn := p.'1, outputColumn := agg p.'2))
+--       (pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn)
+
+
+partitionDict : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
+partitionDict = \key eq r inputColumn. sorry
 
 -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
 -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
 -- of `agg` specifies the output column, the input column, and the function that compute the 
 -- summarizing value (e.g. average, sum, and count).
--- [x] for all `c` in `cs`, `c` is in `header(t1)`
--- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
--- [x] `ci2` is in `header(t1)`
--- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
--- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
--- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
--- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
--- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
 pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
-pivotTable = 
-  \t1 groupColumn outputColumn inputColumn agg eq.
-    map
-      (\p. (groupColumn := p.'1, outputColumn := agg p.'2))
-      (pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn)
+pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
+  (\ partitioned.
+      map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned) (partitionDict (\r. r.groupColumn) eq t1 inputColumn)
+
+
 
 -- ### `groupBy<K,V> :: t1:Table * key:(r1:Row -> k1:K) * project:(r2:Row -> v:V) * aggregate:(k2:K * vs:Seq<V> -> r3:Row) -> t2:Table`
 -- Groups the rows of a table according to a specified key selector function and creates a result 
@@ -437,7 +455,7 @@ update = \t1 f. map (\r1. (f (prj r1)) ++ (prj r1)) t1
 --   [1] if `c` is in `cs` then `schema(t2)[c]` is equal to the element sort of `schema(t1)[c]`
 --   [ ] otherwise, `schema(t2)[c]` is equal to `schema(t1)[c]`
 flatten : Fold cs, (List* cs) + r' ~ r1, cs + r' ~ r2 => Table r1 -> Pi (Labels cs) -> Table r2
-flatten = \t1 cs. flattenList (map (\r1. crossJoin (cons (prj r1) nil) (transposeColumns (getListColumns cs r1))) t1)
+flatten = \t1 cs. concat (map (\r1. crossJoin (cons (prj r1) nil) (transposeColumns (getListColumns cs r1))) t1)
 
 
 -- generalizes transformColumn and renameColumn
