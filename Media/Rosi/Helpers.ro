@@ -124,21 +124,19 @@ unliftMaybePi = \r. if (isJusts r)
                  (Just (syn #Id (\k. fromJust_DANGER_ r.k)))
                  Nothing
 
-            
+
 
 --------------------------------------------------------------------------------
 -- Record utils
 --------------------------------------------------------------------------------
 
+-- synthesize a record with labels mapped to Unit
 labelsP : Pi (Labels r)
 labelsP = syn #(Const Unit) (const tt)
 
+-- replace the value in an instance of Sigma r with Unit
 labelsS : Sigma r -> Sigma (Labels r)
 labelsS = \r. ana #(\t. t) (\l v. inj (l := tt)) r
-
-labelsL : List (Pi r) -> Pi (Labels r)
-labelsL = const labelsP
-
 
 -- PivotWider helpers
 eqPrj : cs < r1, cs < r2 => Eq (Pi cs) -> Pi r1 -> Pi r2 -> Bool

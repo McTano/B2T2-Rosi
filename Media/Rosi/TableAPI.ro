@@ -126,8 +126,10 @@ ncols : Table r -> Nat
 ncols = length
 
 -- ### `header :: t:Table -> cs:Seq<ColName>`
--- Also, without changing the structure of tables, this can't work for empty table
--- header : Fold r1 => Table r1 -> (List L)
+-- This can work for empty tables as long as the type is known.
+-- However, given the current limitations of syn and label serialization,
+-- it may only be possible to print the internal representation of the labels,
+-- not the original labels as written.
 -- NOTE: We represent `Seq<ColName>` as `Pi (Labels cs)`, so this gives us what we need for
 -- functions that take that input.
 header : Table r1 -> Pi (Labels r1)
