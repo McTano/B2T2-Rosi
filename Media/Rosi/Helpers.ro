@@ -69,10 +69,10 @@ filterMaybe = foldr (\e a. ( 'Just: x -> (cons x a)
 length : List a -> Nat
 length = foldr (\e a. succ a) 0
 
-takeN : List a -> Nat -> List a
-takeN = fix (\takeN xs. ( 'Zero: u -> nil
+take : List a -> Nat -> List a
+take = fix (\take xs. ( 'Zero: u -> nil
                        | 'Succ: pr -> ( 'Nil: u -> nil
-                                     | 'Cons: ys -> cons ys.'1 (takeN ys.'2 pr)) xs))
+                                     | 'Cons: ys -> cons ys.'1 (take ys.'2 pr)) xs))
 
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 

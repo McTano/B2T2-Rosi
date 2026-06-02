@@ -199,10 +199,10 @@ selectColumnsAlt = \t1. map prj t1
 -- [ ] if `n` is non-negative then `nrows(t2)` is equal to `n`
 -- [ ] if `n` is negative then `nrows(t2)` is equal to `nrows(t1) + n`
 tableHead : Table r1 -> Int -> Table r1
-tableHead = \t1.  'Plus: n -> takeN t1 n
+tableHead = \t1.  'Plus: n -> take t1 n
                 | 'Minus: n ->
                   ( 'Zero: u -> nil
-                  | 'Succ: m -> takeN t1 (monus (nrows t1) n)) n
+                  | 'Succ: m -> take t1 (monus (nrows t1) n)) n
 
 -- ### `tfilter :: t1:Table * f:(r:Row -> b:Boolean) -> t2:Table`
 tfilter : Table r1 -> (Pi r1 -> Bool) -> Table r1
