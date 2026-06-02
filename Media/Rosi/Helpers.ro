@@ -74,9 +74,6 @@ takeN = fix (\takeN xs. ( 'Zero: u -> nil
                        | 'Succ: pr -> ( 'Nil: u -> nil
                                      | 'Cons: ys -> cons ys.'1 (takeN ys.'2 pr)) xs))
 
-flattenList : List (List a) -> List a
-flattenList = foldr append nil
-
 all : (a -> Bool) -> List a -> Bool
 all = \f xs. foldr and True (map f xs) 
 
