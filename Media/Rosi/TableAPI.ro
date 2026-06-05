@@ -330,48 +330,28 @@ bin = \t1 c width.
     in map (\p. ('count := length p.'2, 'group := (showNat (mult p.'1 width)) ^ " <= value < " ^ (showNat (mult (succ p.'1) width)))) partitioned
 
 
+-- -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
 -- NOTE: We would like to be able to express that the agg argument is (Labels r1 ~ Labels r2) => Pi {for each #l in r1 | l := (r1.l -> r2.l)}
 -- It would be interesting to be able to express something like this even if it was limited to when r1 and r2 have the same keys
 -- i.e. Pi {l := r1.l -> r2.l}
 -- ^ In the POPL 2019 paper, this is referred to in Related Work -> Modern Rows as being possible in Pottiers and Remy 2005
 -- may be possible to define when we have GADTS and implicits
--- pivotPartitionHelper : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
--- pivotPartitionHelper = \key eq t inputColumn.
---   foldr (\r a. addToPartition a eq (key r) r.inputColumn ) emptyDict t
-
--- -- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- -- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
--- -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
--- -- of `agg` specifies the output column, the input column, and the function that compute the 
--- -- summarizing value (e.g. average, sum, and count).
--- -- [x] for all `c` in `cs`, `c` is in `header(t1)`
--- -- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
--- -- [x] `ci2` is in `header(t1)`
--- -- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
--- -- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
--- -- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
--- -- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
--- -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
--- pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
--- pivotTable = 
---   \t1 groupColumn outputColumn inputColumn agg eq.
---     map
---       (\p. (groupColumn := p.'1, outputColumn := agg p.'2))
---       (pivotPartitionHelper (\r. r.groupColumn) eq t1 inputColumn)
-
-
-partitionDict : {inputColumn := v1} < r => (TableRow r -> K) -> (Eq K) -> Table r -> #inputColumn -> Dict K (List v1)
-partitionDict = \key eq r inputColumn. sorry
-
--- ### `pivotTable :: t1:Table * cs:Seq<ColName> * aggs:Seq<ColName * ColName * Function> -> t2:Table`
--- NOTE: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
+-- PROBLEM: Can only define for 1 column at a time. Same limitation as in the Toohey paper. See notes above.
 -- Partitions rows into groups and summarize each group with the functions in `agg`. Each element
 -- of `agg` specifies the output column, the input column, and the function that compute the 
 -- summarizing value (e.g. average, sum, and count).
+-- [x] for all `c` in `cs`, `c` is in `header(t1)`
+-- [ ] for all `c` in `cs`, `schema(t1)[c]` is a categorical sort [What does this actually mean?]
+-- [x] `ci2` is in `header(t1)`
+-- [ ] `concat(cs, [c11, ... , cn1])` has no duplicates
+-- [x] `fi` consumes `Seq<schema(t1)[ci2]>`
+-- [ ] `header(t2)` is equal to `concat(cs, [c11, ... , cn1])`
+-- [x] for all `c` in `cs`, `schema(t2)[c]` is equal to `schema(t1)[c]`
+-- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
 pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
 pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
   (\ partitioned.
-      map (\p. (groupColumn := p.'1, outputColumn := agg p.'2)) partitioned) (partitionDict (\r. r.groupColumn) eq t1 inputColumn)
+      map (\p. (groupColumn := p.'1, outputColumn := agg (map (.inputColumn) p.'2))) partitioned) (partitionWithDict (\r. r.groupColumn) eq t1)
 
 
 
