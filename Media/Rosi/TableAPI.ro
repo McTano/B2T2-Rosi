@@ -350,8 +350,7 @@ bin = \t1 c width.
 -- [ ] `schema(t2)[ci1]` is equal to the sort of outputs of `fi` for all `i`
 pivotTable :  {groupColumn := K} < r1, {inputColumn := v1} < r1 => Table r1 -> #groupColumn -> #outputColumn -> #inputColumn -> ((List v1) -> v2) -> Eq K -> Table ({groupColumn := K} + {outputColumn := v2})
 pivotTable = \t1 groupColumn outputColumn inputColumn agg eq.
-  (\ partitioned.
-      map (\p. (groupColumn := p.'1, outputColumn := agg (map (.inputColumn) p.'2))) partitioned) (partitionWithDict (\r. r.groupColumn) eq t1)
+      map (\p. (groupColumn := p.'1, outputColumn := agg (map (.inputColumn) p.'2))) (partitionWithDict (.groupColumn) eq t1)
 
 
 
