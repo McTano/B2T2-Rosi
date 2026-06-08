@@ -283,13 +283,8 @@ tsort = \t1 c asc. orderBy t1 (cons (mkComparer (\r. r.c) (if asc lte (\a b. not
 -- [x] `schema(t2)` is equal to `schema(t1)`
 -- NOTE: We use `List (Sigma (Labels cs))` instead of the usual `(Labels cs)` to represent the sequence of column names,
 --       because the order of the column names determines their priority in the comparison when sorting the table rows.
--- PROBLEM: Can't convince typechecker that r.c must be Nat. See Github issue #28. https://github.com/IowaFP/Rosi/issues/28
--- sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
--- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc lte (\a b. not (lte a b))))) cs)
-
--- Alternate version requiring the leq functions to be passed in, but not requiring the columns to be `Nat`
--- sortByColumns : Table r -> List (Sigma (Leq* r)) -> Bool -> Table r
--- sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (pair (\r. ana #(Const Unit) (\c u. r.c) c) (if asc lte (\a b. not (lte a b))))) cs)
+sortByColumns : ((Const Nat)* cs) + rr ~ r => Table r -> (List (Sigma (Labels cs))) -> Bool -> Table r
+sortByColumns = \t1 cs asc. orderBy t1 (map (\c. (mkComparer (\r. ana #(Const Unit) (\c u. r.c) c) (if asc lte (\a b. not (lte a b))))) cs)
 
 -- ## Aggregate
 
