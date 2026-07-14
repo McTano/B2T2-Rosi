@@ -60,7 +60,6 @@ TODO
 
 The schema of each table is clearly expressed in its type.
 
-
 > Q. How direct is the mapping from the tables in the benchmark to representations in your system? How complex is the encoding?
 
 The encoding is quite simple.
@@ -73,7 +72,7 @@ A table is represented as a list of table rows. A table row is a record whose st
 
 > Q. Are there consistent changes made to the way the operations are represented?
 
-A `Seq<ColName>` is consistently represented as an unordered record where each column name (as a label) is mapped to the `Unit` type (encoded in Rosi as an empty record). The only exception to this pattern is in `sortByColumns`, where a list of column names is used instead (see `sortByColumns` implementation in `TableAPI.ro`).
+A `Seq<ColName>` is consistently represented as an unordered record where each column name (as a label) is mapped to the `Unit` type (encoded in Rosi as an empty record). The only exception to this pattern is in `sortByColumns`, where a list of column names (as a list of the variant which has a constructor for each column name, mapped to unit.) is used instead (see `sortByColumns` implementation in `TableAPI.ro`).
 
 Wherever `Number` is required, we generally use `Nat`, except in `head` where special behavior is defined for negative values, so we use `Int` instead.
 
@@ -81,10 +80,7 @@ We are able to support existential types to the extent required by `orderBy`. A 
 
 > Q. Which operations are entirely inexpressible? Why?
 
-Implementation of the following operations are currently blocked by type errors, which may be resolvable in the current version of Rosi, or may require changes to Rosi. See notes in `TableAPI.ro` for details.
-
-- `pivotTable`: various errors depending how I attempt to express the type.
-- `sortByColumns`: Can't convince the typechecker that each indicated column must be contain a number.
+None.
 
 > Q. Which operations are only partially expressible? Why, and what’s missing?
 
@@ -107,8 +103,15 @@ In addition, the following operations currently present problems. See notes in `
 - `selectColumns`: the first two overloads are not expressible because they require both:
   1. ordered columns, and
   2. a result type which is determined based on the values in the input sequence, which would require dependent types.
-- `renameColumns` and `pivotTable` are supposed to be able to operate over multiple tables at once. However, the former has only been successfully defined over a single column at a time. The same should be true for the latter, except that the single-column version also has issues (see previous answer).
+- `renameColumns` and `pivotTable` are supposed to be able to operate over multiple tables at once. However, we have only successfully defined them over a single column at a time.
 - `dropna`: This operation can only be applied if all columns in a table are nullable. Unfortunately, there is also currently no way to convert a partially nullable table schema into a fully nullable one. Solving either problem would probably require something similar to the `Split` constraint as described in *Toohey et al. 2026*.
+
+In addition, our columns do not support the properties which are listed in `TableAPI.md#assumptions`, but which are not actually necessary to support the benchmark operations. Specifically, column names cannot be appended or split like strings. They also cannot be looked up by numerical index, due to our columns being unordered, and cannot be converted to a string. They can be stored in a database column, in the form `Sigma (Labels cs)`; i.e. the variant with a nullary constructor for each label in the row `cs`. However, if we were to actually store these in an external database, the current implementation does not guarantee that the stored value would necessarily be usable in another Rosi program which accessed the database.
+
+- `concat`: append two column names
+- `colNameOfNumber`: convert a `Number` to a `ColName`
+- `split`: divide a column name into pieces (used to implement `startsWith`)
+
 
 > Q. Which operations’ expressibility is unknown? Why?
 
