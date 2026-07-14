@@ -8,9 +8,9 @@ testDivMod3 = divMod 12 3
 testDivMod4 = divMod 20 3
 
 
-dict = (cons (pair 1 "One")
-             (cons (pair 2 "Two")
-                    (cons (pair 3 "Three")
+dict = ((::) (pair 1 "One")
+             ((::) (pair 2 "Two")
+                    ((::) (pair 3 "Three")
                     nil
                     )
               ))
@@ -28,9 +28,9 @@ set3 = setD dict equal 3 "NewThree"
 setMissing = setD dict equal 7 "Lucky number 7"
 setEmpty = setD emptyDict equal 7 "Lucky number 7"
 
-countDict = (cons (pair 3 11)
-                  (cons (pair 5 13)
-                        (cons (pair 7 17)
+countDict = ((::) (pair 3 11)
+                  ((::) (pair 5 13)
+                        ((::) (pair 7 17)
                               nil)))
 
 inc1 = inc countDict equal 3 -- 11
@@ -52,16 +52,16 @@ canInjNonEmptyListToList : List Nat
 canInjNonEmptyListToList = inj goodList
 
 nonEmptyExample1 : Maybe (NonEmptyList Nat)
-nonEmptyExample1 = nonEmpty (cons 1 (cons 2 nil))
+nonEmptyExample1 = nonEmpty ((::) 1 ((::) 2 nil))
 
 nonEmptyExample2 : Maybe (NonEmptyList Nat)
 nonEmptyExample2 = nonEmpty nil
 
 nonEmptyPiExample1 : Pi {'l1 := Maybe (NonEmptyList Nat), ('l2 := Maybe (NonEmptyList Nat))}
-nonEmptyPiExample1 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := (cons 3 (cons 6 (cons 9 nil)))))
+nonEmptyPiExample1 = prj (nonEmptyPi ('l1 := ((::) 1 ((::) 2 nil)), 'l2 := ((::) 3 ((::) 6 ((::) 9 nil)))))
 
 nonEmptyPiExample2 : Pi {'l1 := Maybe (NonEmptyList Nat), ('l2 := Maybe (NonEmptyList Nat))}
-nonEmptyPiExample2 = prj (nonEmptyPi ('l1 := (cons 1 (cons 2 nil)), 'l2 := nil))
+nonEmptyPiExample2 = prj (nonEmptyPi ('l1 := ((::) 1 ((::) 2 nil)), 'l2 := nil))
 
 
 showCs : Pi {'l1 := Nat, 'l2 := Nat} -> String
@@ -71,10 +71,10 @@ showCsL : Table {'l1 := Nat, 'l2 := Nat} -> String
 showCsL = showList showCs
 
 transposeColumnsExample1' : Table {'l1 := Nat, 'l2 := Nat}
-transposeColumnsExample1' = (transposeColumns ('l1 := (cons 1 (cons 2 nil)), 'l2 := (cons 3 (cons 6 (cons 9 nil)))))
+transposeColumnsExample1' = (transposeColumns ('l1 := ((::) 1 ((::) 2 nil)), 'l2 := ((::) 3 ((::) 6 ((::) 9 nil)))))
 
 transposeColumnsExample2' : Table {'l1 := Nat, 'l2 := Nat}
-transposeColumnsExample2' = (transposeColumns ('l1 := (cons 1 (cons 2 nil)), 'l2 := nil))
+transposeColumnsExample2' = (transposeColumns ('l1 := ((::) 1 ((::) 2 nil)), 'l2 := nil))
 
 transposeColumnsExample1 = showCsL transposeColumnsExample1'
 transposeColumnsExample2 = showCsL transposeColumnsExample2'

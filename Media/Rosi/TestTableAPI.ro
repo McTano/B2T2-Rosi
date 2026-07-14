@@ -2,15 +2,15 @@ import Ro.Base
 import TableAPI, ExampleTables
 
 -- built-ins
-nrowsExample = nrows (cons tt (cons tt nil))
+nrowsExample = nrows ((::) tt ((::) tt nil))
 
 -- Constructors
 type BracesRow : R[*]
 type BracesRow = {'has_braces := Bool }
 
 bracesTable : Table BracesRow
-bracesTable = (cons ('has_braces := True)
-                    (cons ('has_braces := False)
+bracesTable = ((::) ('has_braces := True)
+                    ((::) ('has_braces := False)
                            nil))
 
 crossJoinExample : Table (StudentsRow + BracesRow)
@@ -20,26 +20,26 @@ type GradesRow : R[*]
 type GradesRow = {'name := String, 'age := Nat, 'quiz1 := Nat, 'quiz2 := Nat, 'midterm := Nat}
 
 grades : Table GradesRow
-grades = cons ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
-              (cons ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
-                    (cons ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
+grades = (::) ('name := "Bob", 'age := 12, 'quiz1 := 8, 'quiz2 := 9, 'midterm := 77)
+              ((::) ('name := "Alice", 'age := 17, 'quiz1 := 6, 'quiz2 := 8, 'midterm := 88)
+                    ((::) ('name := "Eve", 'age := 13, 'quiz1 := 7, 'quiz2 := 9, 'midterm := 84)
                           nil))
 
 
 leftJoinExample1 = leftJoin students grades (eqP ('name := (~), 'age := equal))
 
-leftJoinExample1Expected = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
-                                (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
-                                      (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
+leftJoinExample1Expected = (::) ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
+                                ((::) ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
+                                      ((::) ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
                                             nil))
 
 leftJoinExample2 = leftJoin studentsWithDupeColors grades (eqP ('name := (~), 'age := equal))
 
-leftJoinExample2Expected = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
-                                 (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
-                                       (cons ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
-                                             (cons ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
-                                                   (cons ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
+leftJoinExample2Expected = ((::) ('name := "Colton", 'age := 8, 'favorite_color := "red", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
+                                 ((::) ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green", 'quiz1 := Nothing, 'quiz2 := Nothing, 'midterm := Nothing)
+                                       ((::) ('name := "Bob", 'age := 12, 'favorite_color := "blue", 'quiz1 := Just 8, 'quiz2 := Just 9, 'midterm := Just 77)
+                                             ((::) ('name := "Alice", 'age := 17, 'favorite_color := "green", 'quiz1 := Just 6, 'quiz2 := Just 8, 'midterm := Just 88)
+                                                   ((::) ('name := "Eve", 'age := 13, 'favorite_color := "red", 'quiz1 := Just 7, 'quiz2 := Just 9, 'midterm := Just 84)
                                                     nil)))))
 
 -- leftJoinExample3 : StudentsTable
@@ -60,9 +60,9 @@ selectColumnsAltStudents = selectColumnsAlt students
 
 
 selectColumnsStudentsExpected : Table {'name := String, 'favorite_color := String}
-selectColumnsStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
-           (cons ('name := "Alice", 'favorite_color := "green")
-           (cons ('name := "Eve", 'favorite_color := "red")
+selectColumnsStudentsExpected = (::) ('name := "Bob", 'favorite_color := "blue")
+           ((::) ('name := "Alice", 'favorite_color := "green")
+           ((::) ('name := "Eve", 'favorite_color := "red")
                  nil))
 
 -- we can omit the type annotation for this version
@@ -74,9 +74,9 @@ dropColumnAltStudents : Table {'name := String, 'favorite_color := String}
 dropColumnAltStudents = dropColumnAlt students
 
 -- dropColumnStudentsExpected : Table {'name := String, 'favorite_color := String}
-dropColumnStudentsExpected = cons ('name := "Bob", 'favorite_color := "blue")
-           (cons ('name := "Alice", 'favorite_color := "green")
-           (cons ('name := "Eve", 'favorite_color := "red")
+dropColumnStudentsExpected = (::) ('name := "Bob", 'favorite_color := "blue")
+           ((::) ('name := "Alice", 'favorite_color := "green")
+           ((::) ('name := "Eve", 'favorite_color := "red")
                  nil))
 
 dropColumnsStudents = dropColumns students ('age := tt, 'favorite_color := tt)
@@ -87,23 +87,23 @@ dropColumnsAltStudents = dropColumnsAlt students
 -- I get an interesting error when I remove this type annotation
 -- dropColumnsStudentsExpected : Table {'name := String}
 -- dropColumnsStudentsExpected : List (Sigma {'name := String})
-dropColumnsStudentsExpected = cons ('name := "Bob")
-                                    (cons ('name := "Alice")
-                                    (cons ('name := "Eve")
+dropColumnsStudentsExpected = (::) ('name := "Bob")
+                                    ((::) ('name := "Alice")
+                                    ((::) ('name := "Eve")
                                           nil))
 
 tfilterExample = tfilter studentsWithDupeColors (\r1. or (r1.'favorite_color ~"red") (r1.'name ~ "Alice"))
-tfilterExampleExpected = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
-                               (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
-                                     (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")
+tfilterExampleExpected = ((::) ('name := "Colton", 'age := 8, 'favorite_color := "red")
+                               ((::) ('name := "Alice", 'age := 17, 'favorite_color := "green")
+                                     ((::) ('name := "Eve", 'age := 13, 'favorite_color := "red")
                                            nil)))
 
 selectStudents : Table {'id := Nat, 'name := String}
 selectStudents = select students (\p. (prj p.'1) ++ ('id := p.'2))
 
-selectStudentsExpected = cons ('id := 0, 'name := "Bob")
-                              (cons ('id := 1, 'name := "Alice")
-                              (cons ('id := 2, 'name := "Eve")
+selectStudentsExpected = (::) ('id := 0, 'name := "Bob")
+                              ((::) ('id := 1, 'name := "Alice")
+                              ((::) ('id := 2, 'name := "Eve")
                                           nil))
 
 -- Aggregate
@@ -115,9 +115,9 @@ getDictFailure = getD studentsFavoriteColorsAsDict (~) "pink"
 studentsFavoriteColorsAsTable = count studentsWithDupeColors 'favorite_color (~)
 
 studentsFavoriteColorsAsTableExpected : Table {'value := String, 'count := Nat}
-studentsFavoriteColorsAsTableExpected = (cons ('value := "red", 'count := 2)
-                                          (cons ('value := "green", 'count := 2)
-                                                (cons ('value := "blue", 'count := 2)
+studentsFavoriteColorsAsTableExpected = ((::) ('value := "red", 'count := 2)
+                                          ((::) ('value := "green", 'count := 2)
+                                                ((::) ('value := "blue", 'count := 2)
                                                       nil)))
 
 
@@ -150,7 +150,7 @@ concreteVariant : VariantType
 concreteVariant = inj ('Left := "Bob")
 
 concreteVariantInList : List VariantType
-concreteVariantInList = cons concreteVariant nil
+concreteVariantInList = (::) concreteVariant nil
 
 l'' : #'Example
 l'' = 'Example

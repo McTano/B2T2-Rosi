@@ -16,16 +16,16 @@ type StudentsTable : *
 type StudentsTable = Table StudentsRow
 
 students : StudentsTable
-students = cons ('name := "Bob", 'age := 12, 'favorite_color := "blue")
-           (cons ('name := "Alice", 'age := 17, 'favorite_color := "green")
-           (cons ('name := "Eve", 'age := 13, 'favorite_color := "red")
-                 nil))
+students = ('name := "Bob", 'age := 12, 'favorite_color := "blue")
+         ::('name := "Alice", 'age := 17, 'favorite_color := "green")
+         ::('name := "Eve", 'age := 13, 'favorite_color := "red")
+         ::nil
 
 
 studentsWithDupeColors : StudentsTable
-studentsWithDupeColors = (cons ('name := "Colton", 'age := 8, 'favorite_color := "red")
-                                                     (cons ('name := "Terrible Steve", 'age := 2, 'favorite_color := "green")
-                                                            students))
+studentsWithDupeColors = ('name := "Colton", 'age := 8, 'favorite_color := "red")
+                       ::('name := "Terrible Steve", 'age := 2, 'favorite_color := "green")
+                       ::students
 
 
 

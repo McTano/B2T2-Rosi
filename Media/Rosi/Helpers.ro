@@ -37,7 +37,7 @@ emptyPartition : forall t:*. Partition t ks
 emptyPartition = \@t. syn #(Const (List t)) (\l. nil)
 
 extendPartition : Partition t ks -> Sigma (Labels ks) -> t -> Partition t ks
-extendPartition = \p k t. ana #(Const Unit) (\l. const ((l := cons t p.l) ++ (prj p))) k
+extendPartition = \p k t. ana #(Const Unit) (\l. const ((l := t :: p.l) ++ (prj p))) k
 
 -- helpers for groupBy
 partition : (Pi r -> (Sigma (Labels ks))) -> List (Pi r) -> Partition (Pi r) ks
@@ -69,10 +69,10 @@ getD = fix (\getD d eq k.
 
 setD : Dict k v -> Eq k -> k -> v -> Dict k v
 setD = fix (\setD d eq k v.
-                  (  'Nil: u -> (cons (pair k v) nil)
+                  (  'Nil: u -> ((pair k v) :: nil)
                   |  'Cons: ys -> if (eq ys.'1.'1 k)
-                                      (cons (pair k v) ys.'2)
-                                      (cons ys.'1 (setD ys.'2 eq k v))
+                                      ((pair k v) :: ys.'2)
+                                      (ys.'1 :: (setD ys.'2 eq k v))
                   ) d)
 
 inc : Dict k Nat -> Eq k -> k -> Dict k Nat
@@ -82,7 +82,7 @@ inc = \d eq k. setD d eq k (maybe 1 succ (getD d eq k))
 addToPartition : Dict K (List V) -> Eq K -> K -> V -> Dict K (List V)
 addToPartition = \d eq k v.
   let curr = fromMaybe nil (getD d eq k) in
-    setD d eq k (cons v curr)
+    setD d eq k (v :: curr)
 
 partitionWithDict : (TableRow r -> K) -> (Eq K) -> Table r -> Dict K (Table r)
 partitionWithDict = \key eq t.
@@ -147,14 +147,13 @@ eqPrj = \eqs r1 r2. eqs (prj r1) (prj r2)
 --------------------------------------------------------------------------------
 
 type NonEmptyList : * -> *
--- should this have a sigma between tail is plain List and tail is NonEmptyList?
 type NonEmptyList = \a. Sigma { 'Cons := Pair a (List a) }
 
 -- type NonEmptyList : * -> *
 -- type NonEmptyList = \a. Sigma {'Cons: \l. Pair a l}
 
 baseList : List Nat
-baseList = cons 1 nil
+baseList = 1::nil
 
 goodList : NonEmptyList Nat
 goodList = ('Cons := pair 1 nil)
@@ -191,11 +190,11 @@ columnsTail : Pi (List* cs) -> Pi (List* cs)
 columnsTail = \d. syn #List (\l. tail d.l)
 
 consColumns : Pi cs -> Pi (List* cs) -> Pi (List* cs)
-consColumns = \d ds. syn #List (\l. cons d.l ds.l)
+consColumns = \d ds. syn #List (\l. d.l :: ds.l)
 
 transposeColumns : Fold cs => Pi (List* cs) -> List (Pi cs)
-transposeColumns = fix (\transpose cs. ( 'Just: cns -> (cons (columnsHead cns)
-                                                             (transpose (columnsTail cs)))
+transposeColumns = fix (\transpose cs. ( 'Just: cns -> ((columnsHead cns)
+                                                             ::(transpose (columnsTail cs)))
                                         |  'Nothing: u -> nil)
                                                          ((unliftMaybePi . nonEmptyPi) cs))
 
